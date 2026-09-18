@@ -153,8 +153,8 @@ export default function StudentsPage() {
 
   const startEdit = (student: Student) => {
     setShowEditForm(true);
-    setValue("first_name", student.first_name);
-    setValue("last_name", student.last_name);
+    setValue("first_name", student.first_name || "");
+    setValue("last_name", student.last_name || "");
     setValue("email", student.email || "");
     setValue("phone", student.phone || "");
     setValue("address", student.address || "");
@@ -178,15 +178,24 @@ export default function StudentsPage() {
       key: "name",
       header: "Name",
       sortable: true,
-      render: (row: Student) => (
-        <div className="flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={row.photo_url} />
-            <AvatarFallback className="text-xs">{row.first_name[0]}{row.last_name[0]}</AvatarFallback>
-          </Avatar>
-          <span>{row.first_name} {row.last_name}</span>
-        </div>
-      ),
+      render: (row: Student) => {
+        const firstName = row?.first_name || "";
+        const lastName = row?.last_name || "";
+        const firstLetter = firstName ? firstName[0] : "";
+        const lastLetter = lastName ? lastName[0] : "";
+
+        return (
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={row?.photo_url} />
+              <AvatarFallback className="text-xs">
+                {firstLetter}{lastLetter}
+              </AvatarFallback>
+            </Avatar>
+            <span>{firstName} {lastName}</span>
+          </div>
+        );
+      },
     },
     { key: "email", header: "Email", sortable: true },
     { key: "phone", header: "Phone", sortable: true },
@@ -228,6 +237,11 @@ export default function StudentsPage() {
 
   // Detail View
   if (view === "detail" && selectedStudent) {
+    const firstName = selectedStudent?.first_name || "";
+    const lastName = selectedStudent?.last_name || "";
+    const firstLetter = firstName ? firstName[0] : "";
+    const lastLetter = lastName ? lastName[0] : "";
+
     return (
       <div className="space-y-6">
         {dialog}
@@ -239,10 +253,10 @@ export default function StudentsPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-start">
           <Avatar className="h-20 w-20">
             <AvatarImage src={selectedStudent.photo_url} />
-            <AvatarFallback className="text-2xl">{selectedStudent.first_name[0]}{selectedStudent.last_name[0]}</AvatarFallback>
+            <AvatarFallback className="text-2xl">{firstLetter}{lastLetter}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">{selectedStudent.first_name} {selectedStudent.last_name}</h1>
+            <h1 className="text-2xl font-bold">{firstName} {lastName}</h1>
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
               {selectedStudent.email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {selectedStudent.email}</span>}
               {selectedStudent.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {selectedStudent.phone}</span>}

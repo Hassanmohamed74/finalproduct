@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Student } from '../../shared/entities/student.entity';
+import { CreateStudentDto } from './dto/create-student.dto';
+import { UpdateStudentDto } from './dto/update-student.dto';
 
 @Injectable()
 export class StudentsService {
@@ -10,13 +12,20 @@ export class StudentsService {
     private readonly repo: Repository<Student>,
   ) {}
 
-  async findAll(filters: { search?: string; branchId?: string }): Promise<Student[]> {
+  async create(createStudentDto: CreateStudentDto): Promise<Student> {
+    const student = this.repo.create(createStudentDto);
+    return this.repo.save(student);
+  }
+
+  async findAll(filters: { search?: string; branchId?: string; status?: string }): Promise<Student[]> {
     const query = this.repo.createQueryBuilder('student')
-      .leftJoinAndSelect('student.branch', 'branch');
+      .leftJoinAndSelect('student.branch', 'branch')
+      .leftJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect('student.profile', 'profile');
 
     if (filters.search) {
       query.andWhere(
-        '(student.first_name ILIKE :search OR student.last_name ILIKE :search OR student.email ILIKE :search OR student.phone ILIKE :search)',
+        '(user.first_name ILIKE :search OR user.last_name ILIKE :search OR user.email ILIKE :search OR student.student_number ILIKE :search)',
         { search: `%${filters.search}%` },
       );
     }
@@ -25,13 +34,17 @@ export class StudentsService {
       query.andWhere('branch.id = :branchId', { branchId: filters.branchId });
     }
 
+    if (filters.status) {
+      query.andWhere('student.status = :status', { status: filters.status });
+    }
+
     return query.getMany();
   }
 
   async findOne(id: string): Promise<Student> {
     const student = await this.repo.findOne({
       where: { id },
-      relations: ['branch', 'profile', 'level_history'], // الأسماء الصحيحة حسب الـ Entity
+      relations: ['user', 'branch', 'profile', 'level_history'],
     });
 
     if (!student) {
@@ -39,5 +52,58 @@ export class StudentsService {
     }
 
     return student;
+  }
+
+  async update(id: string, updateStudentDto: UpdateStudentDto): Promise<Student> {
+    const student = await this.findOne(id);
+    Object.assign(student, updateStudentDto);
+    return this.repo.save(student);
+  }
+
+  async remove(id: string): Promise<void> {
+    const student = await this.findOne(id);
+    await this.repo.remove(student);
+  }
+
+  // --- Sub-resources Methods ---
+
+  async getGroups(id: string) {
+    const student = await this.repo.findOne({
+      where: { id },
+      relations: ['groups', 'groups.course', 'groups.branch'],
+    });
+    return student?.groups ?? [];
+  }
+
+  async getAttendance(id: string) {
+    const student = await this.repo.findOne({
+      where: { id },
+      relations: ['attendances'],
+    });
+    return student?.attendances ?? [];
+  }
+
+  async getCertificates(id: string) {
+    const student = await this.repo.findOne({
+      where: { id },
+      relations: ['certificates'],
+    });
+    return student?.certificates ?? [];
+  }
+
+  async getPayments(id: string) {
+    const student = await this.repo.findOne({
+      where: { id },
+      relations: ['payments'],
+    });
+    return student?.payments ?? [];
+  }
+
+  async getLevelHistory(id: string) {
+    const student = await this.repo.findOne({
+      where: { id },
+      relations: ['level_history'],
+    });
+    return student?.level_history ?? [];
   }
 }

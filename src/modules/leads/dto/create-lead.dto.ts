@@ -1,4 +1,14 @@
-import { IsString, IsNotEmpty, MaxLength, IsOptional, IsEmail, IsEnum, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MaxLength,
+  IsOptional,
+  IsEmail,
+  IsEnum,
+  IsUUID,
+  IsArray,
+  IsDateString,
+} from 'class-validator';
 import { LeadSource } from '../../../common/enums/lead-source.enum';
 
 export class CreateLeadDto {
@@ -46,4 +56,13 @@ export class CreateLeadDto {
   @IsOptional()
   @IsUUID()
   branch_id?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @IsOptional()
+  @IsDateString()
+  follow_up_date?: string;
 }

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -20,9 +20,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { SessionItem, Group, Attendance, Student } from "@/types";
 import {
-  Plus, X, Pencil, Trash2, Eye, ChevronLeft, CalendarDays, Clock,
-  Video, MapPin, Users, CheckCircle2, XCircle, AlertTriangle,
-  QrCode, Lock, Unlock, PlayCircle, Ban
+  Plus, X, Pencil, Trash2, Eye, ChevronLeft,
+  CheckCircle2, QrCode, Lock, Unlock, PlayCircle, Ban
 } from "lucide-react";
 
 const sessionTypes = ["in_person", "online", "hybrid"];
@@ -37,12 +36,19 @@ const sessionSchema = z.object({
   session_type: z.string().min(1, "Type is required"),
   meeting_link: z.string().optional(),
   classroomId: z.string().optional(),
+  date: z.string().min(1, "Date is required"),
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   status: z.string().optional(),
 });
 
 type SessionForm = z.infer<typeof sessionSchema>;
+
+const formatTimeDisplay = (dateStr?: string, timeStr?: string) => {
+  if (!timeStr) return dateStr || "—";
+  if (!dateStr) return timeStr;
+  return `${dateStr} ${timeStr}`;
+};
 
 export default function SessionsPage() {
   const { t } = useTranslation("common");
@@ -87,10 +93,12 @@ export default function SessionsPage() {
     enabled: !!selectedSessionId && view === "detail",
   });
 
+  const targetGroupId = selectedSession?.groupId || (selectedSession as any)?.group_id;
+
   const { data: groupStudents } = useQuery({
-    queryKey: ["group-students", selectedSession?.groupId],
-    queryFn: () => studentsApi.findAll({ groupId: selectedSession!.groupId }),
-    enabled: !!selectedSession?.groupId && view === "detail",
+    queryKey: ["group-students", targetGroupId],
+    queryFn: () => studentsApi.findAll({ groupId: targetGroupId! }),
+    enabled: !!targetGroupId && view === "detail",
   });
 
   const createMutation = useMutation({
@@ -196,7 +204,7 @@ export default function SessionsPage() {
   };
 
   const onSubmit = (data: SessionForm) => {
-    const dto: Partial<SessionItem> = {
+    const dto: any = {
       groupId: data.groupId,
       title: data.title,
       topic: data.topic,
@@ -204,6 +212,7 @@ export default function SessionsPage() {
       session_type: data.session_type,
       meeting_link: data.meeting_link,
       classroomId: data.classroomId,
+      date: data.date,
       start_time: data.start_time,
       end_time: data.end_time,
       status: data.status,
@@ -215,18 +224,19 @@ export default function SessionsPage() {
     }
   };
 
-  const startEdit = (session: SessionItem) => {
+  const startEdit = (session: SessionItem | any) => {
     setEditingId(session.id);
     setShowForm(true);
-    setValue("groupId", session.groupId || "");
-    setValue("title", session.title);
+    setValue("groupId", session.groupId || session.group_id || "");
+    setValue("title", session.title || "");
     setValue("topic", session.topic || "");
     setValue("notes", session.notes || "");
-    setValue("session_type", session.session_type);
+    setValue("session_type", session.session_type || "in_person");
     setValue("meeting_link", session.meeting_link || "");
-    setValue("classroomId", session.classroomId || "");
-    setValue("start_time", session.start_time ? session.start_time.slice(0, 16) : "");
-    setValue("end_time", session.end_time ? session.end_time.slice(0, 16) : "");
+    setValue("classroomId", session.classroomId || session.classroom_id || "");
+    setValue("date", session.date ? String(session.date).slice(0, 10) : "");
+    setValue("start_time", session.start_time ? String(session.start_time).slice(0, 5) : "");
+    setValue("end_time", session.end_time ? String(session.end_time).slice(0, 5) : "");
     setValue("status", session.status || "scheduled");
   };
 
@@ -242,7 +252,7 @@ export default function SessionsPage() {
   };
 
   const getAttendanceForStudent = (studentId: string): Attendance | undefined => {
-    return sessionAttendance?.find((a) => a.student_id === studentId);
+    return sessionAttendance?.find((a: Attendance) => a.student_id === studentId);
   };
 
   const columns = [
@@ -250,7 +260,9 @@ export default function SessionsPage() {
     {
       key: "group",
       header: "Group",
-      render: (row: SessionItem) => <span className="text-sm">{row.group?.name || row.groupId || "—"}</span>,
+      render: (row: SessionItem | any) => (
+        <span className="text-sm">{row.group?.name || row.groupId || row.group_id || "—"}</span>
+      ),
     },
     {
       key: "session_type",
@@ -264,12 +276,14 @@ export default function SessionsPage() {
     {
       key: "start_time",
       header: "Start",
-      render: (row: SessionItem) => <span className="text-xs">{row.start_time ? new Date(row.start_time).toLocaleString() : "—"}</span>,
+      render: (row: SessionItem | any) => (
+        <span className="text-xs">{formatTimeDisplay(row.date, row.start_time)}</span>
+      ),
     },
     {
       key: "end_time",
       header: "End",
-      render: (row: SessionItem) => <span className="text-xs">{row.end_time ? new Date(row.end_time).toLocaleString() : "—"}</span>,
+      render: (row: SessionItem | any) => <span className="text-xs">{row.end_time || "—"}</span>,
     },
     {
       key: "status",
@@ -314,7 +328,6 @@ export default function SessionsPage() {
     },
   ];
 
-  // Detail View
   if (view === "detail" && selectedSession) {
     const students = groupStudents || [];
     const isLocked = selectedSession.attendance_locked;
@@ -350,7 +363,6 @@ export default function SessionsPage() {
           </div>
         </div>
 
-        {/* Cancel Dialog */}
         {showCancelDialog && (
           <Card className="border-destructive">
             <CardHeader><CardTitle className="text-base text-destructive">Cancel Session</CardTitle></CardHeader>
@@ -368,9 +380,9 @@ export default function SessionsPage() {
         )}
 
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Group</p><p className="text-lg font-bold">{selectedSession.group?.name || selectedSession.groupId || "—"}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Date & Time</p><p className="text-lg font-bold">{selectedSession.start_time ? new Date(selectedSession.start_time).toLocaleString() : "—"}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Duration</p><p className="text-lg font-bold">{selectedSession.start_time && selectedSession.end_time ? `${Math.round((new Date(selectedSession.end_time).getTime() - new Date(selectedSession.start_time).getTime()) / 60000)} min` : "—"}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Group</p><p className="text-lg font-bold">{selectedSession.group?.name || selectedSession.groupId || (selectedSession as any).group_id || "—"}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Date & Time</p><p className="text-lg font-bold">{formatTimeDisplay((selectedSession as any).date, selectedSession.start_time)}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">End Time</p><p className="text-lg font-bold">{selectedSession.end_time || "—"}</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="attendance">
@@ -416,7 +428,7 @@ export default function SessionsPage() {
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-2">
                               <div className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                                {student.first_name[0]}{student.last_name[0]}
+                                {student.first_name?.[0]}{student.last_name?.[0]}
                               </div>
                               <span className="text-sm">{student.first_name} {student.last_name}</span>
                             </div>
@@ -462,16 +474,15 @@ export default function SessionsPage() {
               <div className="text-center py-8 text-muted-foreground">No students in this group.</div>
             )}
 
-            {/* Attendance Summary */}
             {sessionAttendance && sessionAttendance.length > 0 && (
               <Card>
                 <CardHeader><CardTitle className="text-base">Attendance Summary</CardTitle></CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-4 gap-4 text-center">
-                    <div><p className="text-2xl font-bold text-green-600">{sessionAttendance.filter((a) => a.status === "present").length}</p><p className="text-xs text-muted-foreground">Present</p></div>
-                    <div><p className="text-2xl font-bold text-red-600">{sessionAttendance.filter((a) => a.status === "absent").length}</p><p className="text-xs text-muted-foreground">Absent</p></div>
-                    <div><p className="text-2xl font-bold text-yellow-600">{sessionAttendance.filter((a) => a.status === "late").length}</p><p className="text-xs text-muted-foreground">Late</p></div>
-                    <div><p className="text-2xl font-bold text-gray-600">{sessionAttendance.filter((a) => a.status === "excused").length}</p><p className="text-xs text-muted-foreground">Excused</p></div>
+                    <div><p className="text-2xl font-bold text-green-600">{sessionAttendance.filter((a: Attendance) => a.status === "present").length}</p><p className="text-xs text-muted-foreground">Present</p></div>
+                    <div><p className="text-2xl font-bold text-red-600">{sessionAttendance.filter((a: Attendance) => a.status === "absent").length}</p><p className="text-xs text-muted-foreground">Absent</p></div>
+                    <div><p className="text-2xl font-bold text-yellow-600">{sessionAttendance.filter((a: Attendance) => a.status === "late").length}</p><p className="text-xs text-muted-foreground">Late</p></div>
+                    <div><p className="text-2xl font-bold text-gray-600">{sessionAttendance.filter((a: Attendance) => a.status === "excused").length}</p><p className="text-xs text-muted-foreground">Excused</p></div>
                   </div>
                 </CardContent>
               </Card>
@@ -485,8 +496,8 @@ export default function SessionsPage() {
                   <span className="text-muted-foreground">Topic:</span><span>{selectedSession.topic || "—"}</span>
                   <span className="text-muted-foreground">Notes:</span><span>{selectedSession.notes || "—"}</span>
                   <span className="text-muted-foreground">Meeting Link:</span><span>{selectedSession.meeting_link ? <a href={selectedSession.meeting_link} target="_blank" rel="noopener noreferrer" className="text-primary underline">Open Link</a> : "—"}</span>
-                  <span className="text-muted-foreground">Classroom:</span><span>{selectedSession.classroomId || "—"}</span>
-                  <span className="text-muted-foreground">Recording:</span><span>{selectedSession.recording_link ? <a href={selectedSession.recording_link} target="_blank" rel="noopener noreferrer" className="text-primary underline">View Recording</a> : "—"}</span>
+                  <span className="text-muted-foreground">Classroom:</span><span>{(selectedSession as any).classroomId || (selectedSession as any).classroom_id || "—"}</span>
+                  <span className="text-muted-foreground">Recording:</span><span>{(selectedSession as any).recording_link || (selectedSession as any).recording_url ? <a href={(selectedSession as any).recording_link || (selectedSession as any).recording_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">View Recording</a> : "—"}</span>
                 </div>
               </CardContent>
             </Card>
@@ -496,10 +507,10 @@ export default function SessionsPage() {
             <Card>
               <CardContent className="p-6 text-center">
                 <PlayCircle className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-40" />
-                {selectedSession.recording_link ? (
+                {(selectedSession as any).recording_link || (selectedSession as any).recording_url ? (
                   <div>
                     <p className="font-medium">Recording Available</p>
-                    <a href={selectedSession.recording_link} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">{selectedSession.recording_link}</a>
+                    <a href={(selectedSession as any).recording_link || (selectedSession as any).recording_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">{(selectedSession as any).recording_link || (selectedSession as any).recording_url}</a>
                   </div>
                 ) : (
                   <p className="text-muted-foreground">No recording linked to this session.</p>
@@ -512,7 +523,6 @@ export default function SessionsPage() {
     );
   }
 
-  // List View
   return (
     <div className="space-y-6">
       {dialog}
@@ -568,12 +578,17 @@ export default function SessionsPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Date *</Label>
+                  <Input type="date" {...register("date")} />
+                  {errors.date && <p className="text-sm text-destructive">{errors.date.message}</p>}
+                </div>
+                <div className="space-y-2">
                   <Label>Start Time</Label>
-                  <Input type="datetime-local" {...register("start_time")} />
+                  <Input type="time" {...register("start_time")} />
                 </div>
                 <div className="space-y-2">
                   <Label>End Time</Label>
-                  <Input type="datetime-local" {...register("end_time")} />
+                  <Input type="time" {...register("end_time")} />
                 </div>
                 <div className="space-y-2">
                   <Label>Meeting Link</Label>

@@ -1,10 +1,27 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import { 
+  Entity, 
+  PrimaryGeneratedColumn, 
+  Column, 
+  CreateDateColumn, 
+  UpdateDateColumn, 
+  ManyToOne, 
+  JoinColumn, 
+  OneToOne, 
+  OneToMany, 
+  ManyToMany, 
+  JoinTable 
+} from 'typeorm';
 import { User } from './user.entity';
 import { Branch } from './branch.entity';
 import { StudentStatus } from '../../common/enums/student-status.enum';
 import { StudentProfile } from './student-profile.entity';
 import { StudentLevelHistory } from './student-level-history.entity';
 import { Referral } from './referral.entity';
+import { Group } from './group.entity';
+import { GroupStudent } from './group-student.entity';
+import { Attendance } from './attendance.entity';
+import { Certificate } from './certificate.entity';
+import { Payment } from './payment.entity';
 
 @Entity('students')
 export class Student {
@@ -57,4 +74,26 @@ export class Student {
 
   @OneToMany(() => Referral, (r) => r.referred_student)
   referrals_received: Referral[];
+
+  // --- العلاقات المضافة مع معالجة أخطاء TypeScript ---
+
+  @ManyToMany(() => Group)
+  @JoinTable({
+    name: 'group_students',
+    joinColumn: { name: 'student_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'group_id', referencedColumnName: 'id' },
+  })
+  groups: Group[];
+
+  @OneToMany(() => GroupStudent, (gs) => gs.student)
+  group_students: GroupStudent[];
+
+  @OneToMany(() => Attendance, (a) => (a as any).student)
+  attendances: Attendance[];
+
+  @OneToMany(() => Certificate, (c) => (c as any).student)
+  certificates: Certificate[];
+
+  @OneToMany(() => Payment, (p) => (p as any).student)
+  payments: Payment[];
 }

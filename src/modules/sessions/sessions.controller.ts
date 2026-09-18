@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiParam } from '@nestjs/swagger';
 import { SessionsService } from './sessions.service';
 import { Session } from '../../shared/entities/session.entity';
@@ -48,8 +48,18 @@ export class SessionsController {
   @ApiParam({ name: 'id', description: 'Session UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Returns session details.' })
   @ApiResponse({ status: 404, description: 'Session not found.' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.findOne(id);
+  }
+
+  @Get(':id/attendance')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
+  @ApiOperation({ summary: 'Get attendance records for a specific session' })
+  @ApiParam({ name: 'id', description: 'Session UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiResponse({ status: 200, description: 'Returns list of attendance records.' })
+  @ApiResponse({ status: 404, description: 'Session not found.' })
+  async getAttendance(@Param('id', ParseUUIDPipe) id: string) {
+    return this.service.getAttendance(id);
   }
 
   @Put(':id')
@@ -70,7 +80,7 @@ export class SessionsController {
   })
   @ApiResponse({ status: 200, description: 'Session updated successfully.' })
   @ApiResponse({ status: 404, description: 'Session not found.' })
-  async update(@Param('id') id: string, @Body() updateData: Partial<Session>) {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updateData: Partial<Session>) {
     return this.service.update(id, updateData);
   }
 
@@ -80,7 +90,7 @@ export class SessionsController {
   @ApiParam({ name: 'id', description: 'Session UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Session deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Session not found.' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.service.remove(id);
   }
 }

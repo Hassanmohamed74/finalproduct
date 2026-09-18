@@ -23,6 +23,7 @@ export function Topbar({ onMenuToggle, onLogout }: TopbarProps) {
         <Button variant="ghost" size="icon" onClick={onMenuToggle} className="lg:hidden">
           <Menu className="h-5 w-5" />
         </Button>
+        <img src="/logo.svg" alt="SpeakUp" className="h-7 w-7 rounded-md lg:hidden" />
         <h1 className="text-lg font-semibold">{t("app.tagline")}</h1>
       </div>
 
@@ -40,7 +41,10 @@ export function Topbar({ onMenuToggle, onLogout }: TopbarProps) {
               </p>
               <p className="text-xs text-muted-foreground">{user.email}</p>
             </div>
-            <Button variant="ghost" size="icon" onClick={onLogout}>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              {`${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase()}
+            </div>
+            <Button variant="ghost" size="icon" onClick={onLogout} title={t("auth.logout")}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

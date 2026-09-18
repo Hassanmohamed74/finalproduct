@@ -1,7 +1,6 @@
-import { useTranslation } from 'react-i18next';
-import { NavLink, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth';
+import { useTranslation } from "react-i18next";
+import { NavLink, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
@@ -14,7 +13,7 @@ import {
   ShieldCheck,
   LogOut,
   X,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface SidebarProps {
   open: boolean;
@@ -24,40 +23,39 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: '/', label: 'nav.dashboard', icon: LayoutDashboard },
-  { to: '/leads', label: 'nav.leads', icon: Users, roles: ['super_admin', 'branch_manager', 'sales'] },
-  { to: '/students', label: 'nav.students', icon: GraduationCap, roles: ['super_admin', 'branch_manager', 'sales', 'finance', 'academic', 'teacher'] },
-  { to: '/courses', label: 'nav.courses', icon: BookOpen },
-  { to: '/groups', label: 'nav.groups', icon: CalendarDays, roles: ['super_admin', 'academic', 'branch_manager', 'teacher'] },
-  { to: '/sessions', label: 'nav.sessions', icon: Clock, roles: ['super_admin', 'academic', 'branch_manager', 'teacher'] },
-  { to: '/branches', label: 'nav.branches', icon: Building2, roles: ['super_admin', 'branch_manager'] },
-  { to: '/users', label: 'nav.users', icon: UserCog, roles: ['super_admin', 'branch_manager', 'hr'] },
-  { to: '/roles', label: 'nav.roles', icon: ShieldCheck, roles: ['super_admin'] },
+  { to: "/", label: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/leads", label: "nav.leads", icon: Users },
+  { to: "/students", label: "nav.students", icon: GraduationCap },
+  { to: "/courses", label: "nav.courses", icon: BookOpen },
+  { to: "/groups", label: "nav.groups", icon: CalendarDays },
+  { to: "/sessions", label: "nav.sessions", icon: Clock },
+  { to: "/branches", label: "nav.branches", icon: Building2 },
+  { to: "/users", label: "nav.users", icon: UserCog },
+  { to: "/roles", label: "nav.roles", icon: ShieldCheck },
 ];
 
 export function Sidebar({ open, onClose, isMobile, onLogout }: SidebarProps) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation("common");
   const location = useLocation();
-  const { user } = useAuth();
-
-  const userRoles = user?.roles ?? (user?.role ? [user.role] : []);
-  const isSuperAdmin = userRoles.includes('super_admin');
-
-  const visibleItems = navItems.filter((item) =>
-    !item.roles || isSuperAdmin || item.roles.some((role) => userRoles.includes(role)),
-  );
 
   return (
     <aside
       className={cn(
-        'flex flex-col border-r bg-card transition-all duration-300 h-full',
+        "group flex flex-col border-r bg-card transition-all duration-300 h-full",
         isMobile
-          ? cn('fixed inset-y-0 left-0 z-50 w-64', open ? 'translate-x-0' : '-translate-x-full')
-          : cn('w-64', !open && 'w-0 overflow-hidden border-r-0'),
+          ? cn("fixed inset-y-0 left-0 z-50 w-64", open ? "translate-x-0" : "-translate-x-full")
+          : cn("w-16 hover:w-64", !open && "w-0 overflow-hidden border-r-0")
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b px-4">
-        <span className="text-lg font-bold text-primary">TMS</span>
+      {/* Brand */}
+      <div className={cn("flex h-16 items-center border-b", isMobile ? "justify-between px-4" : "justify-center px-2 group-hover:justify-between group-hover:px-4")}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src="/logo.svg" alt="SpeakUp Academy" className="h-8 w-8 shrink-0 rounded-lg" />
+          <div className="hidden min-w-0 leading-tight group-hover:block">
+            <p className="truncate text-base font-bold text-primary">SpeakUp</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Academy</p>
+          </div>
+        </div>
         {isMobile && (
           <button onClick={onClose} className="rounded-md p-1 hover:bg-accent">
             <X className="h-5 w-5" />
@@ -65,36 +63,44 @@ export function Sidebar({ open, onClose, isMobile, onLogout }: SidebarProps) {
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 p-2">
-        {visibleItems.map((item) => {
+      {/* Rail nav: icons always, labels on hover (desktop) */}
+      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
           return (
             <NavLink
               key={item.to}
               to={item.to}
+              title={t(item.label)}
               onClick={isMobile ? onClose : undefined}
               className={cn(
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                "flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors",
+                isMobile ? "px-3" : "justify-center px-0 group-hover:justify-start group-hover:px-3",
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              <span>{t(item.label)}</span>
+              <span className={cn("truncate", !isMobile && "hidden group-hover:block")}>{t(item.label)}</span>
             </NavLink>
           );
         })}
       </nav>
 
+      {/* Logout */}
       <div className="border-t p-2">
         <button
           onClick={onLogout}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
+          title={t("auth.logout")}
+          className={cn(
+            "flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10",
+            isMobile ? "px-3" : "justify-center px-0 group-hover:justify-start group-hover:px-3"
+          )}
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          <span>{t('auth.logout')}</span>
+          <span className={cn(!isMobile && "hidden group-hover:block")}>{t("auth.logout")}</span>
         </button>
       </div>
     </aside>

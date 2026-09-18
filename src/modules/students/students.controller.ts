@@ -1,32 +1,62 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, ParseUUIDPipe } from '@nestjs/common';
 import { StudentsService } from './students.service';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { CreateStudentDto } from './dto/create-student.dto';
+import { UpdateStudentDto } from './dto/update-student.dto';
+import { StudentQueryDto } from './dto/student-query.dto';
 
-@ApiTags('Students')
-@ApiBearerAuth('JWT')
 @Controller('students')
 export class StudentsController {
-  constructor(private readonly service: StudentsService) {}
+  constructor(private readonly studentsService: StudentsService) {}
+
+  @Post()
+  create(@Body() createStudentDto: CreateStudentDto) {
+    return this.studentsService.create(createStudentDto);
+  }
 
   @Get()
-  @Roles('super_admin', 'branch_manager', 'sales', 'finance', 'academic', 'teacher')
-  @ApiOperation({ summary: 'Get all students with search and filters' })
-  @ApiQuery({ name: 'search', required: false, description: 'Search by name, email, or phone' })
-  @ApiQuery({ name: 'branchId', required: false, description: 'Filter by branch' })
-  async findAll(
-    @Query('search') search?: string,
-    @Query('branchId') branchId?: string,
-  ) {
-    return this.service.findAll({ search, branchId });
+  findAll(@Query() query: StudentQueryDto) {
+    return this.studentsService.findAll(query);
   }
 
   @Get(':id')
-  @Roles('super_admin', 'branch_manager', 'sales', 'finance', 'academic', 'teacher')
-  @ApiOperation({ summary: 'Get student profile by id with full history (payments, attendance, levels)' })
-  @ApiResponse({ status: 200, description: 'Returns student profile details.' })
-  @ApiResponse({ status: 404, description: 'Student not found.' })
-  async findOne(@Param('id') id: string) {
-    return this.service.findOne(id);
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateStudentDto: UpdateStudentDto) {
+    return this.studentsService.update(id, updateStudentDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.remove(id);
+  }
+
+  // --- Sub-resources Endpoints ---
+
+  @Get(':id/groups')
+  getGroups(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.getGroups(id);
+  }
+
+  @Get(':id/attendance')
+  getAttendance(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.getAttendance(id);
+  }
+
+  @Get(':id/certificates')
+  getCertificates(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.getCertificates(id);
+  }
+
+  @Get(':id/payments')
+  getPayments(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.getPayments(id);
+  }
+
+  @Get(':id/level-history')
+  getLevelHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.studentsService.getLevelHistory(id);
   }
 }
