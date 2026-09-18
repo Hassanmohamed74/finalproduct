@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { User } from "@/types";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { User } from '@/types';
 
 interface AuthState {
   user: User | null;
@@ -28,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: true,
       isHydrated: false,
       permissions: [],
+
       setAuth: (user, accessToken, refreshToken) =>
         set({
           user,
@@ -35,11 +36,14 @@ export const useAuthStore = create<AuthState>()(
           refreshToken,
           isAuthenticated: true,
           isLoading: false,
+          permissions: user.permissions ?? [],
         }),
+
       clearAuth: () => {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("user");
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('tms_user');
         set({
           user: null,
           accessToken: null,
@@ -49,13 +53,32 @@ export const useAuthStore = create<AuthState>()(
           permissions: [],
         });
       },
+
       setLoading: (loading) => set({ isLoading: loading }),
       setPermissions: (permissions) => set({ permissions }),
-      hasPermission: (permission) => get().permissions.includes(permission) || get().user?.role === "super_admin",
+
+      hasPermission: (permission) => {
+        const { permissions, user } = get();
+        const roles = user?.roles ?? (user?.role ? [user.role] : []);
+
+        if (roles.includes('super_admin')) return true;
+        if (permissions.includes('*')) return true;
+        if (permissions.includes(permission)) return true;
+
+        const [module, action] = permission.split(':');
+        if (!module || !action) return false;
+
+        return (
+          permissions.includes(`${module}:*`) ||
+          permissions.includes('*:*')
+        );
+      },
+
       logout: () => {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("user");
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('tms_user');
         set({
           user: null,
           accessToken: null,
@@ -67,7 +90,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "speakup-auth",
+      name: 'speakup-auth',
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
@@ -81,6 +104,6 @@ export const useAuthStore = create<AuthState>()(
           state.isLoading = false;
         }
       },
-    }
-  )
+    },
+  ),
 );

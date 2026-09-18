@@ -96,7 +96,7 @@ export class HrController {
 
   // ---------- Leave Requests ----------
   @Post('leaves')
-  @Roles('super_admin', 'hr', 'teacher', 'employee')
+  @Roles('super_admin', 'hr', 'teacher')
   @ApiOperation({ summary: 'Request leave' })
   requestLeave(@Body() dto: RequestLeaveDto) {
     return this.service.requestLeave(dto);

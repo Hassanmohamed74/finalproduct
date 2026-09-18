@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, A
 import { GroupsService } from './groups.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Groups')
 @ApiBearerAuth('JWT')
@@ -11,6 +12,7 @@ export class GroupsController {
   constructor(private readonly service: GroupsService) {}
 
   @Post()
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Create a new group/class schedule' })
   @ApiBody({ type: CreateGroupDto })
   @ApiResponse({ status: 201, description: 'Group created successfully.' })
@@ -19,6 +21,7 @@ export class GroupsController {
   }
 
   @Get()
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Get all groups with optional branch or course filters' })
   @ApiQuery({ name: 'branchId', required: false })
   @ApiQuery({ name: 'courseId', required: false })
@@ -31,6 +34,7 @@ export class GroupsController {
 
   // STATIC ROUTES MUST COME BEFORE :id PARAMETER ROUTE
   @Get('check-conflicts')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Check for scheduling conflicts' })
   @ApiQuery({ name: 'teacherId', required: false })
   @ApiQuery({ name: 'classroomId', required: false })
@@ -48,6 +52,7 @@ export class GroupsController {
   }
 
   @Get('calendar')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Get group calendar' })
   @ApiQuery({ name: 'view', required: true })
   @ApiQuery({ name: 'date', required: true })
@@ -65,6 +70,7 @@ export class GroupsController {
   }
 
   @Get(':id')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Get group details by id with relations' })
   @ApiParam({ name: 'id', description: 'Group UUID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Returns group details.' })
@@ -74,6 +80,7 @@ export class GroupsController {
   }
 
   @Put(':id')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Update group details' })
   @ApiParam({ name: 'id', description: 'Group UUID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiBody({ type: UpdateGroupDto })
@@ -84,6 +91,7 @@ export class GroupsController {
   }
 
   @Delete(':id')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Delete a group' })
   @ApiParam({ name: 'id', description: 'Group UUID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Group deleted successfully.' })
@@ -93,6 +101,7 @@ export class GroupsController {
   }
 
   @Post(':id/schedule')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Add schedule to group' })
   @ApiParam({ name: 'id', description: 'Group UUID' })
   async addSchedule(@Param('id') id: string, @Body() schedule: any) {
@@ -100,6 +109,7 @@ export class GroupsController {
   }
 
   @Delete(':id/schedule/:scheduleId')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Remove schedule from group' })
   @ApiParam({ name: 'id', description: 'Group UUID' })
   @ApiParam({ name: 'scheduleId', description: 'Schedule UUID' })
@@ -108,6 +118,7 @@ export class GroupsController {
   }
 
   @Post(':id/students')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Assign student to group' })
   @ApiParam({ name: 'id', description: 'Group UUID' })
   async assignStudent(@Param('id') id: string, @Body() body: { student_id: string }) {
@@ -115,6 +126,7 @@ export class GroupsController {
   }
 
   @Delete(':id/students/:studentId')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Remove student from group' })
   @ApiParam({ name: 'id', description: 'Group UUID' })
   @ApiParam({ name: 'studentId', description: 'Student UUID' })

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { Course } from '../../shared/entities/course.entity';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Courses')
 @ApiBearerAuth('JWT')
@@ -10,6 +11,7 @@ export class CoursesController {
   constructor(private readonly service: CoursesService) {}
 
   @Post()
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Create a new course (with name, level, duration, syllabus, default price)' })
   @ApiResponse({ status: 201, description: 'Course created successfully.' })
   @ApiBody({ 
@@ -47,6 +49,7 @@ export class CoursesController {
   }
 
   @Put(':id')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Update course details' })
   @ApiParam({ name: 'id', description: 'Course UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiBody({ 
@@ -69,6 +72,7 @@ export class CoursesController {
   }
 
   @Delete(':id')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Delete a course' })
   @ApiParam({ name: 'id', description: 'Course UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Course deleted successfully.' })
@@ -80,6 +84,7 @@ export class CoursesController {
   // ==================== Prerequisites Endpoints ====================
 
   @Post(':id/prerequisites')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Add a prerequisite course to a course' })
   @ApiParam({ name: 'id', description: 'Course UUID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiBody({
@@ -102,6 +107,7 @@ export class CoursesController {
   }
 
   @Delete(':id/prerequisites/:prerequisiteId')
+  @Roles('super_admin', 'academic', 'branch_manager')
   @ApiOperation({ summary: 'Remove a prerequisite course from a course' })
   @ApiParam({ name: 'id', description: 'Course UUID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiParam({ name: 'prerequisiteId', description: 'Prerequisite Course UUID', example: '987e6543-e21b-12d3-a456-426614174000' })

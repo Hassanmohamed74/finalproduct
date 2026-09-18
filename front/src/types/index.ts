@@ -25,6 +25,8 @@ export interface User {
   phone?: string;
   status?: string;
   role?: string;
+  roles?: string[];
+  permissions?: string[];
   role_id?: string;
   created_at?: string;
   updated_at?: string;

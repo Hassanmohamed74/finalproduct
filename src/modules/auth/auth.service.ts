@@ -21,16 +21,13 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    // 1. التحقق من عدم تكرار البريد أو الهاتف
-    const exists = await this.userRepo.findOne({ 
-      where: [{ email: dto.email }, { phone: dto.phone }] 
+    const exists = await this.userRepo.findOne({
+      where: [{ email: dto.email }, { phone: dto.phone }],
     });
     if (exists) throw new ConflictException('Email or phone already registered');
 
-    // 2. تشفير كلمة المرور
     const hash = await bcrypt.hash(dto.password, 12);
-    
-    // 3. إنشاء المستخدم (تمت إزالة السطر التالف roles: rolesList)
+
     const user = this.userRepo.create({
       email: dto.email,
       phone: dto.phone,
@@ -38,25 +35,26 @@ export class AuthService {
       first_name: dto.first_name,
       last_name: dto.last_name,
       language: dto.language || 'ar',
-      status: UserStatus.ACTIVE, 
+      status: UserStatus.ACTIVE,
     });
     await this.userRepo.save(user);
 
-    // 4. 🔒 الإصلاح الأمني: تعيين دور "Student" إجبارياً وتجاهل أي إدخال خارجي
     const studentRole = await this.roleRepo.findOne({ where: { slug: 'student' } });
-    
     if (!studentRole) {
-      throw new InternalServerErrorException('Default student role not found in database. Please contact support.');
+      throw new InternalServerErrorException(
+        'Default student role not found in database. Please contact support.',
+      );
     }
 
     await this.userRoleRepo.save({
       user_id: user.id,
       role_id: studentRole.id,
-      assigned_by: user.id, 
+      assigned_by: user.id,
     });
 
-    // 5. إرجاع بيانات الدخول
-    return this.buildAuthResponse(user, [studentRole.slug || 'student']);
+    const roles = [studentRole.slug];
+    const permissions = await this.getUserPermissions(user.id);
+    return this.buildAuthResponse(user, roles, permissions);
   }
 
   async login(dto: LoginDto) {
@@ -66,44 +64,65 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.password, user.password_hash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
-    await this.userRepo.update(user.id, { 
-      last_login_at: new Date(), 
-    });
-    
-    // 🔑 جلب الصلاحيات الحقيقية من قاعدة البيانات بدل الهاردكود
+    await this.userRepo.update(user.id, { last_login_at: new Date() });
+
     const roles = await this.getUserRoles(user.id);
-    
-    return this.buildAuthResponse(user, roles);
+    const permissions = await this.getUserPermissions(user.id);
+
+    return this.buildAuthResponse(user, roles, permissions);
   }
 
   async refresh(dto: RefreshTokenDto) {
     try {
-      const payload = this.jwtService.verify(dto.refresh_token, { secret: process.env.JWT_SECRET });
+      const payload = this.jwtService.verify(dto.refresh_token, {
+        secret: process.env.JWT_SECRET,
+      });
       const user = await this.userRepo.findOne({ where: { id: payload.sub } });
       if (!user) throw new UnauthorizedException();
-      
+
       const roles = await this.getUserRoles(user.id);
-      return this.buildAuthResponse(user, roles);
+      const permissions = await this.getUserPermissions(user.id);
+      return this.buildAuthResponse(user, roles, permissions);
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  // 🛠️ دالة مساعدة لجلب الأدوار الحقيقية لليوزر
   private async getUserRoles(userId: string): Promise<string[]> {
     const userRoles = await this.userRoleRepo.find({
       where: { user_id: userId },
       relations: ['role'],
     });
+
     const slugs = userRoles
-      .map((ur) => ur.role?.slug || ur.role?.name)
+      .map((ur) => ur.role?.slug)
       .filter(Boolean) as string[];
-    
+
     return slugs.length > 0 ? slugs : ['student'];
   }
 
-  private buildAuthResponse(user: User, roles: string[] = ['student']) {
+  private async getUserPermissions(userId: string): Promise<string[]> {
+    const userRoles = await this.userRoleRepo.find({
+      where: { user_id: userId },
+      relations: { role: { permissions: true } },
+    });
+
+    return [
+      ...new Set(
+        userRoles.flatMap((ur) =>
+          (ur.role?.permissions ?? []).map((p) => `${p.module}:${p.action}`),
+        ),
+      ),
+    ];
+  }
+
+  private buildAuthResponse(
+    user: User,
+    roles: string[] = ['student'],
+    permissions: string[] = [],
+  ) {
     const payload = { sub: user.id, email: user.email, roles };
+
     return {
       access_token: this.jwtService.sign(payload),
       refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
@@ -114,7 +133,9 @@ export class AuthService {
         last_name: user.last_name,
         branch_id: user.branch_id,
         language: user.language,
-        roles: roles, // يرجع الصلاحيات الحقيقية (admin, student...)
+        role: roles[0],
+        roles,
+        permissions,
       },
     };
   }

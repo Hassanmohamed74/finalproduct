@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm'
 import { dataSourceOptions } from '../data-source';
 import { seedRoles } from './role.seed';
 import { seedPermissions } from './permission.seed';
+import { seedRolePermissions } from './role-permission.seed';
 import { seedSettings } from './setting.seed';
 import { seedBranch } from './branch.seed';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
@@ -25,6 +26,7 @@ async function runSeeds() {
 
   await seedPermissions(dataSource);
   await seedRoles(dataSource);
+  await seedRolePermissions(dataSource);
   await seedSettings(dataSource);
   await seedBranch(dataSource);
   await seedSuperUser(dataSource); // <-- أضفناها هنا

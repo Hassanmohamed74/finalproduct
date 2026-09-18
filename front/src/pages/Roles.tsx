@@ -12,13 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { Role, Permission, User } from "@/types";
 import {
-  Plus, X, Pencil, Trash2, Eye, ChevronLeft, ShieldCheck,
-  Users, CheckSquare, Square, Lock
+  Plus, X, Pencil, Trash2, Eye, ChevronLeft,
+  CheckSquare, Square
 } from "lucide-react";
 
 const roleSchema = z.object({
@@ -29,14 +28,6 @@ const roleSchema = z.object({
 
 type RoleForm = z.infer<typeof roleSchema>;
 
-const MODULES = [
-  "dashboard", "leads", "students", "courses", "groups", "sessions",
-  "attendance", "finance", "certificates", "hr", "inventory",
-  "activities", "knowledge_base", "reports", "users", "roles",
-  "branches", "settings", "notifications", "chat"
-];
-
-const ACTIONS = ["view", "create", "edit", "delete", "approve"];
 
 export default function RolesPage() {
   const { t } = useTranslation("common");
@@ -222,50 +213,61 @@ export default function RolesPage() {
   ];
 
   // Permission Matrix Component
-  const PermissionMatrix = ({ permissions, readOnly = false }: { permissions: Permission[]; readOnly?: boolean }) => (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border">
-        <thead className="bg-muted">
-          <tr>
-            <th className="px-3 py-2 text-left font-medium sticky left-0 bg-muted">Module</th>
-            {ACTIONS.map((action) => (
-              <th key={action} className="px-3 py-2 text-center font-medium capitalize">{action}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {MODULES.map((module) => (
-            <tr key={module} className="border-t">
-              <td className="px-3 py-2 font-medium capitalize sticky left-0 bg-background">{module.replace("_", " ")}</td>
-              {ACTIONS.map((action) => {
-                const hasPerm = permissions.some((p) => p.module === module && p.action === action);
-                const isSelected = isPermissionSelected(module, action, permissions);
-                return (
-                  <td key={action} className="px-3 py-2 text-center">
-                    {hasPerm ? (
-                      readOnly ? (
-                        isSelected ? <CheckSquare className="h-4 w-4 text-green-600 mx-auto" /> : <Square className="h-4 w-4 text-muted-foreground mx-auto" />
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => toggleModuleAction(module, action, permissions)}
-                          className="focus:outline-none"
-                        >
-                          {isSelected ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-muted-foreground" />}
-                        </button>
-                      )
-                    ) : (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    )}
-                  </td>
-                );
-              })}
+  const PermissionMatrix = ({ permissions, readOnly = false }: { permissions: Permission[]; readOnly?: boolean }) => {
+    const selectedIds = readOnly && selectedRole
+      ? new Set(selectedRole.permissions.map((permission) => permission.id))
+      : selectedPermissions;
+    const modules = [...new Set(permissions.map((p) => p.module))].sort();
+    const actions = [...new Set(permissions.map((p) => p.action))].sort();
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border">
+          <thead className="bg-muted">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium sticky left-0 bg-muted">Module</th>
+              {actions.map((action) => (
+                <th key={action} className="px-3 py-2 text-center font-medium capitalize">{action.replace('_', ' ')}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </thead>
+          <tbody>
+            {modules.map((module) => (
+              <tr key={module} className="border-t">
+                <td className="px-3 py-2 font-medium capitalize sticky left-0 bg-background">{module.replace('_', ' ')}</td>
+                {actions.map((action) => {
+                  const hasPerm = permissions.some((p) => p.module === module && p.action === action);
+                  const isSelected = (() => {
+                    const perm = permissions.find((p) => p.module === module && p.action === action);
+                    return perm ? selectedIds.has(perm.id) : false;
+                  })();
+                  return (
+                    <td key={action} className="px-3 py-2 text-center">
+                      {hasPerm ? (
+                        readOnly ? (
+                          isSelected ? <CheckSquare className="h-4 w-4 text-green-600 mx-auto" /> : <Square className="h-4 w-4 text-muted-foreground mx-auto" />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => toggleModuleAction(module, action, permissions)}
+                            className="focus:outline-none"
+                          >
+                            {isSelected ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-muted-foreground" />}
+                          </button>
+                        )
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   // Detail View
   if (view === "detail" && selectedRole) {

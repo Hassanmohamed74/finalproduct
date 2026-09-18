@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiParam } from '@nestjs/swagger';
 import { ClassroomsService } from './classrooms.service';
 import { Classroom } from '../../shared/entities/classroom.entity';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Classrooms')
 @ApiBearerAuth('JWT')
@@ -10,6 +11,7 @@ export class ClassroomsController {
   constructor(private readonly service: ClassroomsService) {}
 
   @Post()
+  @Roles('super_admin', 'branch_manager', 'academic')
   @ApiOperation({ summary: 'Create a new classroom' })
   @ApiBody({ 
     description: 'Classroom creation payload',
@@ -30,6 +32,7 @@ export class ClassroomsController {
   }
 
   @Get()
+  @Roles('super_admin', 'branch_manager', 'academic', 'teacher')
   @ApiOperation({ summary: 'Get all classrooms with optional branch filter' })
   @ApiQuery({ name: 'branchId', required: false, description: 'Filter classrooms by branch' })
   async findAll(@Query('branchId') branchId?: string) {
@@ -37,6 +40,7 @@ export class ClassroomsController {
   }
 
   @Get(':id')
+  @Roles('super_admin', 'branch_manager', 'academic', 'teacher')
   @ApiOperation({ summary: 'Get classroom details by id' })
   @ApiParam({ name: 'id', description: 'Classroom UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Returns classroom details.' })
@@ -46,6 +50,7 @@ export class ClassroomsController {
   }
 
   @Put(':id')
+  @Roles('super_admin', 'branch_manager', 'academic')
   @ApiOperation({ summary: 'Update classroom details' })
   @ApiParam({ name: 'id', description: 'Classroom UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiBody({ 
@@ -66,6 +71,7 @@ export class ClassroomsController {
   }
 
   @Delete(':id')
+  @Roles('super_admin', 'branch_manager', 'academic')
   @ApiOperation({ summary: 'Delete a classroom' })
   @ApiParam({ name: 'id', description: 'Classroom UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Classroom deleted successfully.' })

@@ -11,7 +11,6 @@ import { Role } from '../../../shared/entities/role.entity';
 export interface JwtPayload {
   sub: string;
   email: string;
-  /** Token version - bump on password change / force-logout to invalidate old tokens */
   tv?: number;
 }
 
@@ -30,41 +29,43 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     const user = await this.userRepo.findOne({
       where: { id: payload.sub },
       relations: ['branch'],
     });
+
     if (!user || user.status !== 'active') {
       throw new UnauthorizedException('User inactive or not found');
     }
-
-    // Optional token invalidation: requires a `token_version` column on User
-    // and the login service embedding `tv: user.token_version` in the JWT.
-    // if (payload.tv !== undefined && payload.tv !== (user as any).token_version) {
-    //   throw new UnauthorizedException('Token has been revoked');
-    // }
 
     const userRoles = await this.userRoleRepo.find({
       where: { user_id: user.id },
       relations: { role: { permissions: true } },
     });
 
-    const roles = [...new Set(userRoles.map((ur) => ur.role.slug))];
+    const roles = [
+      ...new Set(userRoles.map((ur) => ur.role?.slug).filter(Boolean)),
+    ];
+
     const permissions = [
       ...new Set(
         userRoles.flatMap((ur) =>
-          ur.role.permissions.map((p) => `${p.module}:${p.action}`),
+          (ur.role?.permissions ?? []).map((p) => `${p.module}:${p.action}`),
         ),
       ),
     ];
 
+    // Keep both `id` and `userId` because existing controllers use both forms.
+    // Load branch/roles/permissions from DB so permission changes are effective
+    // on the next request without relying on stale JWT fields.
     return {
-    userId: payload.sub,
-    email: payload.email,
-    roles: payload.roles || [payload.role], // تأكد أن هذه المصفوفة موجودة ومُعبأة
-    permissions: payload.permissions || [],
-    branchId: payload.branchId,
-  };
-}
+      id: user.id,
+      userId: user.id,
+      email: user.email,
+      roles,
+      permissions,
+      branchId: user.branch_id ?? null,
+    };
+  }
 }

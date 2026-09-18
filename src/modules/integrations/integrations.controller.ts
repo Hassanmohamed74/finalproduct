@@ -9,6 +9,7 @@ import { OnMeetService } from './onmeet.service';
 import { EasyKashService } from './easykash.service';
 import { Session } from '../../shared/entities/session.entity';
 import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Integrations')
 @Controller('integrations')
@@ -25,6 +26,7 @@ export class IntegrationsController {
   ) {}
 
   @Get('status')
+  @Roles('super_admin', 'branch_manager')
   @ApiOperation({ summary: 'Check which integrations are configured' })
   status() {
     return {

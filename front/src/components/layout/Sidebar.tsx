@@ -1,7 +1,7 @@
-import { useTranslation } from "react-i18next";
-import { NavLink, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from 'react-i18next';
+import { NavLink, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 import {
   LayoutDashboard,
   Users,
@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   LogOut,
   X,
-} from "lucide-react";
+} from 'lucide-react';
 
 interface SidebarProps {
   open: boolean;
@@ -24,41 +24,36 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { to: "/", label: "nav.dashboard", icon: LayoutDashboard },
-  { to: "/leads", label: "nav.leads", icon: Users, hideFor: ["student"] },
-  { to: "/students", label: "nav.students", icon: GraduationCap, hideFor: ["student"] },
-  { to: "/courses", label: "nav.courses", icon: BookOpen },
-  { to: "/groups", label: "nav.groups", icon: CalendarDays },
-  { to: "/sessions", label: "nav.sessions", icon: Clock },
-  { to: "/branches", label: "nav.branches", icon: Building2 },
-  { to: "/users", label: "nav.users", icon: UserCog, hideFor: ["student"] },
-  { to: "/roles", label: "nav.roles", icon: ShieldCheck, hideFor: ["student"] },
+  { to: '/', label: 'nav.dashboard', icon: LayoutDashboard },
+  { to: '/leads', label: 'nav.leads', icon: Users, roles: ['super_admin', 'branch_manager', 'sales'] },
+  { to: '/students', label: 'nav.students', icon: GraduationCap, roles: ['super_admin', 'branch_manager', 'sales', 'finance', 'academic', 'teacher'] },
+  { to: '/courses', label: 'nav.courses', icon: BookOpen },
+  { to: '/groups', label: 'nav.groups', icon: CalendarDays, roles: ['super_admin', 'academic', 'branch_manager', 'teacher'] },
+  { to: '/sessions', label: 'nav.sessions', icon: Clock, roles: ['super_admin', 'academic', 'branch_manager', 'teacher'] },
+  { to: '/branches', label: 'nav.branches', icon: Building2, roles: ['super_admin', 'branch_manager'] },
+  { to: '/users', label: 'nav.users', icon: UserCog, roles: ['super_admin', 'branch_manager', 'hr'] },
+  { to: '/roles', label: 'nav.roles', icon: ShieldCheck, roles: ['super_admin'] },
 ];
 
 export function Sidebar({ open, onClose, isMobile, onLogout }: SidebarProps) {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation('common');
   const location = useLocation();
   const { user } = useAuth();
 
-  // استخراج الصلاحيات بأمان
-  const userRoles: string[] = Array.isArray((user as any)?.roles)
-    ? (user as any).roles
-    : (user as any)?.role
-    ? [(user as any).role]
-    : [];
+  const userRoles = user?.roles ?? (user?.role ? [user.role] : []);
+  const isSuperAdmin = userRoles.includes('super_admin');
 
-  const visibleItems = navItems.filter((item) => {
-    if (!item.hideFor) return true;
-    return !item.hideFor.some((hiddenRole) => userRoles.includes(hiddenRole));
-  });
+  const visibleItems = navItems.filter((item) =>
+    !item.roles || isSuperAdmin || item.roles.some((role) => userRoles.includes(role)),
+  );
 
   return (
     <aside
       className={cn(
-        "flex flex-col border-r bg-card transition-all duration-300 h-full",
+        'flex flex-col border-r bg-card transition-all duration-300 h-full',
         isMobile
-          ? cn("fixed inset-y-0 left-0 z-50 w-64", open ? "translate-x-0" : "-translate-x-full")
-          : cn("w-64", !open && "w-0 overflow-hidden border-r-0")
+          ? cn('fixed inset-y-0 left-0 z-50 w-64', open ? 'translate-x-0' : '-translate-x-full')
+          : cn('w-64', !open && 'w-0 overflow-hidden border-r-0'),
       )}
     >
       <div className="flex h-16 items-center justify-between border-b px-4">
@@ -80,10 +75,10 @@ export function Sidebar({ open, onClose, isMobile, onLogout }: SidebarProps) {
               to={item.to}
               onClick={isMobile ? onClose : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
@@ -99,7 +94,7 @@ export function Sidebar({ open, onClose, isMobile, onLogout }: SidebarProps) {
           className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10"
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          <span>{t("auth.logout")}</span>
+          <span>{t('auth.logout')}</span>
         </button>
       </div>
     </aside>

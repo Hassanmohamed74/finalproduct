@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiParam } from '@nestjs/swagger';
 import { SessionsService } from './sessions.service';
 import { Session } from '../../shared/entities/session.entity';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Sessions')
 @ApiBearerAuth('JWT')
@@ -10,6 +11,7 @@ export class SessionsController {
   constructor(private readonly service: SessionsService) {}
 
   @Post()
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Create a new session (in_person, online, or hybrid with meeting links)' })
   @ApiBody({ 
     description: 'Session creation payload',
@@ -33,6 +35,7 @@ export class SessionsController {
   }
 
   @Get()
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Get all sessions with optional group filter' })
   @ApiQuery({ name: 'groupId', required: false, description: 'Filter sessions by group' })
   async findAll(@Query('groupId') groupId?: string) {
@@ -40,6 +43,7 @@ export class SessionsController {
   }
 
   @Get(':id')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Get session details by id including attendance records' })
   @ApiParam({ name: 'id', description: 'Session UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Returns session details.' })
@@ -49,6 +53,7 @@ export class SessionsController {
   }
 
   @Put(':id')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Update session details or mark attendance' })
   @ApiParam({ name: 'id', description: 'Session UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiBody({ 
@@ -70,6 +75,7 @@ export class SessionsController {
   }
 
   @Delete(':id')
+  @Roles('super_admin', 'academic', 'branch_manager', 'teacher')
   @ApiOperation({ summary: 'Delete a session' })
   @ApiParam({ name: 'id', description: 'Session UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Session deleted successfully.' })

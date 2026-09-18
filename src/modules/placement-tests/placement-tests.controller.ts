@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody, ApiParam } from '@nestjs/swagger';
 import { PlacementTestsService } from './placement-tests.service';
 import { PlacementTest } from '../../shared/entities/placement-test.entity';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Placement Tests')
 @ApiBearerAuth('JWT')
@@ -10,6 +11,7 @@ export class PlacementTestsController {
   constructor(private readonly service: PlacementTestsService) {}
 
   @Post()
+  @Roles('super_admin', 'branch_manager', 'sales', 'academic')
   @ApiOperation({ summary: 'Schedule or submit a placement test slot/result' })
   @ApiBody({ 
     description: 'Placement test creation/scheduling payload',
@@ -32,6 +34,7 @@ export class PlacementTestsController {
   }
 
   @Get()
+  @Roles('super_admin', 'branch_manager', 'sales', 'academic')
   @ApiOperation({ summary: 'Get all placement tests with optional lead filter' })
   @ApiQuery({ name: 'leadId', required: false, description: 'Filter placement tests by lead ID' })
   async findAll(@Query('leadId') leadId?: string) {
@@ -39,6 +42,7 @@ export class PlacementTestsController {
   }
 
   @Get(':id')
+  @Roles('super_admin', 'branch_manager', 'sales', 'academic')
   @ApiOperation({ summary: 'Get placement test details by id' })
   @ApiParam({ name: 'id', description: 'Placement Test UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiResponse({ status: 200, description: 'Returns placement test details.' })
@@ -48,6 +52,7 @@ export class PlacementTestsController {
   }
 
   @Put(':id')
+  @Roles('super_admin', 'academic')
   @ApiOperation({ summary: 'Update test scores, oral/written results, and final assigned level' })
   @ApiParam({ name: 'id', description: 'Placement Test UUID or ID', example: '123e4567-e89b-12d3-a456-426614174000' })
   @ApiBody({ 

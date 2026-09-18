@@ -82,7 +82,7 @@ export class ChatController {
   }
 
   @Post('moderate')
-  @Roles('super_admin', 'branch_manager', 'moderator', 'teacher')
+  @Roles('super_admin', 'moderator')
   @ApiOperation({ summary: 'Moderate user in room' })
   @ApiResponse({ status: 201, description: 'User moderated successfully.' })
   moderateUser(@Body() dto: ModerateUserDto, @CurrentUser() user: any) {
