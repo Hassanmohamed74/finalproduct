@@ -22,6 +22,9 @@ import RolesPage from '@/pages/Roles';
 import AttendancePage from '@/pages/Attendance';
 import PlacementTestsPage from '@/pages/PlacementTests';
 import WaitlistsPage from '@/pages/Waitlists';
+import EnrollmentsPage from '@/pages/Enrollments';
+import FinancePage from '@/pages/Finance';
+import CertificatesPage from '@/pages/Certificates';
 import NotificationsPage from '@/pages/Notifications';
 import AuditLogsPage from '@/pages/AuditLogs';
 import SecuritySettingsPage from '@/pages/SecuritySettings';
@@ -156,6 +159,30 @@ function App() {
             />
 
             <Route path="/notifications" element={<NotificationsPage />} />
+
+            <Route
+              path="/enrollments"
+              element={roleGate(
+                ['super_admin', 'branch_manager', 'sales', 'finance', 'academic'],
+                <EnrollmentsPage />,
+              )}
+            />
+
+            <Route
+              path="/finance"
+              element={roleGate(
+                ['super_admin', 'finance', 'branch_manager'],
+                <FinancePage />,
+              )}
+            />
+
+            <Route
+              path="/certificates"
+              element={roleGate(
+                ['super_admin', 'branch_manager', 'academic', 'finance', 'teacher'],
+                <CertificatesPage />,
+              )}
+            />
 
             <Route
               path="/branches"
