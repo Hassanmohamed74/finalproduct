@@ -19,6 +19,13 @@ import SessionsPage from '@/pages/Sessions';
 import BranchesPage from '@/pages/Branches';
 import UsersPage from '@/pages/Users';
 import RolesPage from '@/pages/Roles';
+import AttendancePage from '@/pages/Attendance';
+import PlacementTestsPage from '@/pages/PlacementTests';
+import WaitlistsPage from '@/pages/Waitlists';
+import NotificationsPage from '@/pages/Notifications';
+import AuditLogsPage from '@/pages/AuditLogs';
+import SecuritySettingsPage from '@/pages/SecuritySettings';
+import NotFoundPage from '@/pages/NotFound';
 
 const roleGate = (roles: string[], element: ReactNode) => (
   <RequireRoles roles={roles}>{element}</RequireRoles>
@@ -125,6 +132,32 @@ function App() {
             />
 
             <Route
+              path="/attendance"
+              element={roleGate(
+                ['super_admin', 'academic', 'branch_manager', 'teacher'],
+                <AttendancePage />,
+              )}
+            />
+
+            <Route
+              path="/placement-tests"
+              element={roleGate(
+                ['super_admin', 'branch_manager', 'sales', 'academic'],
+                <PlacementTestsPage />,
+              )}
+            />
+
+            <Route
+              path="/waitlists"
+              element={roleGate(
+                ['super_admin', 'branch_manager', 'sales', 'academic'],
+                <WaitlistsPage />,
+              )}
+            />
+
+            <Route path="/notifications" element={<NotificationsPage />} />
+
+            <Route
               path="/branches"
               element={roleGate(
                 ['super_admin', 'branch_manager'],
@@ -147,14 +180,23 @@ function App() {
                 <RolesPage />,
               )}
             />
+
+            <Route
+              path="/audit"
+              element={roleGate(['super_admin'], <AuditLogsPage />)}
+            />
+
+            <Route path="/security" element={<SecuritySettingsPage />} />
           </Route>
         </Route>
 
         {/* Unknown Routes */}
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <Toaster />

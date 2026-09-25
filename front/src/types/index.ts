@@ -245,7 +245,11 @@ export interface Student {
   user_id: string;
   student_number: string;
 
-  user: User;
+  user?: User;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
 
   branch_id?: string;
   branch?: Branch;
