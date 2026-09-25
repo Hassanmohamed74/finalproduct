@@ -17,8 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { Branch, User, Classroom } from "@/types";
 import {
-  Plus, X, Pencil, Trash2, Eye, ChevronLeft, Building2, MapPin,
-  Phone, Mail, UserCog, DoorOpen, Users
+  Plus, X, Pencil, Trash2, Eye, ChevronLeft,  MapPin,
+  Phone, Mail, DoorOpen
 } from "lucide-react";
 
 const branchSchema = z.object({

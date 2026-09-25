@@ -14,6 +14,7 @@ import { ViolationQueryDto } from './dto/violation-query.dto';
 import { ChatMessageType } from '../../common/enums/chat-message-type.enum';
 import { ViolationAction } from '../../common/enums/violation-action.enum';
 import { StrikeAction } from '../../common/enums/strike-action.enum';
+import { normalizeChatMessage } from './utils/normalize-chat';
 
 @Injectable()
 export class ChatService {
@@ -289,34 +290,36 @@ export class ChatService {
 
   // ─── COMPLIANCE ENGINE ───
 
-  scanMessage(body: string): { violation: boolean; rule: string; action: ViolationAction } | null {
+    scanMessage(body: string): { violation: boolean; rule: string; action: ViolationAction } | null {
     if (!body) return null;
 
-    const rules = [
-      // Egyptian phone numbers
-      { name: 'phone_egyptian', pattern: /\b(01[0-2,5]\d{8}|\+20\s?1[0-2,5]\s?\d{8}|0020\s?1[0-2,5]\s?\d{8})\b/, action: ViolationAction.BLOCKED },
-      // International phone
-      { name: 'phone_international', pattern: /\b\+?\d{10,15}\b/, action: ViolationAction.BLOCKED },
-      // Arabic-Indic numerals phone-like
-      { name: 'phone_arabic_indic', pattern: /[٠١٢٣٤٥٦٧٨٩]{10,}/, action: ViolationAction.BLOCKED },
-      // Email
+    const { canonical, squashed } = normalizeChatMessage(body);
+    const targets = [canonical, squashed]; // test both forms
+
+    const rules: Array<{ name: string; pattern: RegExp; action: ViolationAction }> = [
+      // Egyptian mobile: 010/011/012/015 + 8 digits (catches squashed separators too)
+      { name: 'phone_egyptian', pattern: /01[0125]\d{8}/, action: ViolationAction.BLOCKED },
+      // International Egypt: +20 / 0020 variants
+      { name: 'phone_egyptian_intl', pattern: /(\+?20|0020)1[0125]\d{8}/, action: ViolationAction.BLOCKED },
+      // Any 10–15 digit run (post-squash catches spaced/dashed forms)
+      { name: 'phone_generic', pattern: /\d{10,15}/, action: ViolationAction.BLOCKED },
+      // Email (canonical already collapsed "at"/"dot")
       { name: 'email', pattern: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/, action: ViolationAction.BLOCKED },
-      // Obfuscated email
-      { name: 'email_obfuscated', pattern: /\b[\w.]+\s*\[at\]\s*[\w.]+\s*\[dot\]\s*\w+\b/i, action: ViolationAction.BLOCKED },
-      // WhatsApp links
-      { name: 'whatsapp_link', pattern: /(wa\.me\/|api\.whatsapp\.com\/send\?phone=)/i, action: ViolationAction.BLOCKED },
-      // Social media handles with platform mention
-      { name: 'social_handle', pattern: /\b(facebook|instagram|twitter|telegram|snapchat|tiktok)\s*[:@]\s*\w+/i, action: ViolationAction.WARNED },
-      // Trigger phrases
-      { name: 'trigger_contact_share', pattern: /(call me|text me|DM me|كلمني بره|رقمي هو|بعت لي|ابعت لي)/i, action: ViolationAction.BLOCKED },
+      // WhatsApp / messenger links
+      { name: 'messenger_link', pattern: /(wa\.me\/|api\.whatsapp\.com|t\.me\/|m\.me\/|telegram\.org|signal\.me|viber\.com)/i, action: ViolationAction.BLOCKED },
+      // Social handle + platform mention
+      { name: 'social_handle', pattern: /(facebook|instagram|twitter|telegram|snapchat|tiktok)\s*[:@]\s*\w+/i, action: ViolationAction.WARNED },
+      // Trigger phrases (EN + AR)
+      { name: 'trigger_contact_share', pattern: /(call me|text me|dm me|my number is|كلمني بره|رقمي هو|ابعت ?لي|ابعتلي|على الواتس|الواتس اب|الواتساب)/i, action: ViolationAction.BLOCKED },
     ];
 
     for (const rule of rules) {
-      if (rule.pattern.test(body)) {
-        return { violation: true, rule: rule.name, action: rule.action };
+      for (const target of targets) {
+        if (rule.pattern.test(target)) {
+          return { violation: true, rule: rule.name, action: rule.action };
+        }
       }
     }
-
     return null;
   }
 

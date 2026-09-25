@@ -9,12 +9,12 @@ export class ChatViolation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
-  message_id: string;
+ @Column({ type: 'uuid', nullable: true })
+message_id?: string;
 
-  @ManyToOne(() => ChatMessage, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'message_id' })
-  message: ChatMessage;
+@ManyToOne(() => ChatMessage, { onDelete: 'CASCADE', nullable: true })
+@JoinColumn({ name: 'message_id' })
+message?: ChatMessage;
 
   @Column({ type: 'uuid' })
   room_id: string;

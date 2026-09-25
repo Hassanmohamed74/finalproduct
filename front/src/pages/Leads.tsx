@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
 import { leadsApi, type CreateLeadDto, type UpdateLeadDto, type LeadFilters } from "@/api/leads";
 import { branchesApi } from "@/api/branches";
 import { usersApi } from "@/api/users";
@@ -21,7 +20,7 @@ import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { Lead, Branch, User, LeadActivity } from "@/types";
 import {
   Plus, X, Pencil, Trash2, Search, Filter, Download, Upload,
-  Eye, Phone, Mail, Calendar, Tag, UserCheck, AlertCircle,
+  Eye, Phone, Mail, Calendar, UserCheck,
   ChevronLeft, MessageSquare, History, CheckCircle2
 } from "lucide-react";
 
@@ -83,7 +82,6 @@ export default function LeadsPage() {
   const { t } = useTranslation("common");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const { confirm, dialog } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

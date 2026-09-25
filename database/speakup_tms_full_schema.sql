@@ -1657,6 +1657,7 @@ CREATE TABLE invoice_items (
     invoice_id      UUID NOT NULL,
     item_type       invoice_item_type NOT NULL,
     course_id       UUID,
+    inventory_item_id UUID, -- Added permanently
     description     VARCHAR(255) NOT NULL,
     quantity        INTEGER NOT NULL DEFAULT 1,
     unit_price      DECIMAL(12,2) NOT NULL DEFAULT 0,

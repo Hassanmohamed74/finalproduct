@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Student } from '../../shared/entities/student.entity';
+import { Payment } from '../../shared/entities/payment.entity';
+
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 
@@ -10,32 +16,66 @@ export class StudentsService {
   constructor(
     @InjectRepository(Student)
     private readonly repo: Repository<Student>,
+
+    @InjectRepository(Payment)
+    private readonly paymentRepo: Repository<Payment>,
   ) {}
 
-  async create(createStudentDto: CreateStudentDto): Promise<Student> {
+  async create(
+    createStudentDto: CreateStudentDto,
+  ): Promise<Student> {
     const student = this.repo.create(createStudentDto);
     return this.repo.save(student);
   }
 
-  async findAll(filters: { search?: string; branchId?: string; status?: string }): Promise<Student[]> {
-    const query = this.repo.createQueryBuilder('student')
-      .leftJoinAndSelect('student.branch', 'branch')
-      .leftJoinAndSelect('student.user', 'user')
-      .leftJoinAndSelect('student.profile', 'profile');
+  async findAll(filters: {
+    search?: string;
+    branchId?: string;
+    status?: string;
+  }): Promise<Student[]> {
+    const query = this.repo
+      .createQueryBuilder('student')
+      .leftJoinAndSelect(
+        'student.branch',
+        'branch',
+      )
+      .leftJoinAndSelect(
+        'student.user',
+        'user',
+      )
+      .leftJoinAndSelect(
+        'student.profile',
+        'profile',
+      );
 
     if (filters.search) {
       query.andWhere(
-        '(user.first_name ILIKE :search OR user.last_name ILIKE :search OR user.email ILIKE :search OR student.student_number ILIKE :search)',
-        { search: `%${filters.search}%` },
+        '(user.first_name ILIKE :search OR ' +
+          'user.last_name ILIKE :search OR ' +
+          'user.email ILIKE :search OR ' +
+          'student.student_number ILIKE :search)',
+        {
+          search: `%${filters.search}%`,
+        },
       );
     }
 
     if (filters.branchId) {
-      query.andWhere('branch.id = :branchId', { branchId: filters.branchId });
+      query.andWhere(
+        'branch.id = :branchId',
+        {
+          branchId: filters.branchId,
+        },
+      );
     }
 
     if (filters.status) {
-      query.andWhere('student.status = :status', { status: filters.status });
+      query.andWhere(
+        'student.status = :status',
+        {
+          status: filters.status,
+        },
+      );
     }
 
     return query.getMany();
@@ -44,19 +84,34 @@ export class StudentsService {
   async findOne(id: string): Promise<Student> {
     const student = await this.repo.findOne({
       where: { id },
-      relations: ['user', 'branch', 'profile', 'level_history'],
+      relations: [
+        'user',
+        'branch',
+        'profile',
+        'level_history',
+      ],
     });
 
     if (!student) {
-      throw new NotFoundException(`Student with ID ${id} not found`);
+      throw new NotFoundException(
+        `Student with ID ${id} not found`,
+      );
     }
 
     return student;
   }
 
-  async update(id: string, updateStudentDto: UpdateStudentDto): Promise<Student> {
+  async update(
+    id: string,
+    updateStudentDto: UpdateStudentDto,
+  ): Promise<Student> {
     const student = await this.findOne(id);
-    Object.assign(student, updateStudentDto);
+
+    Object.assign(
+      student,
+      updateStudentDto,
+    );
+
     return this.repo.save(student);
   }
 
@@ -65,13 +120,20 @@ export class StudentsService {
     await this.repo.remove(student);
   }
 
-  // --- Sub-resources Methods ---
+  // -------------------------------------------------------
+  // Sub-resources
+  // -------------------------------------------------------
 
   async getGroups(id: string) {
     const student = await this.repo.findOne({
       where: { id },
-      relations: ['groups', 'groups.course', 'groups.branch'],
+      relations: [
+        'groups',
+        'groups.course',
+        'groups.branch',
+      ],
     });
+
     return student?.groups ?? [];
   }
 
@@ -80,6 +142,7 @@ export class StudentsService {
       where: { id },
       relations: ['attendances'],
     });
+
     return student?.attendances ?? [];
   }
 
@@ -88,15 +151,51 @@ export class StudentsService {
       where: { id },
       relations: ['certificates'],
     });
+
     return student?.certificates ?? [];
   }
 
+  /**
+   * Payments are related to students through invoices:
+   *
+   * Student
+   *   ↓
+   * Invoice.student_id
+   *   ↓
+   * Payment.invoice_id
+   */
   async getPayments(id: string) {
     const student = await this.repo.findOne({
       where: { id },
-      relations: ['payments'],
     });
-    return student?.payments ?? [];
+
+    if (!student) {
+      throw new NotFoundException(
+        `Student with ID ${id} not found`,
+      );
+    }
+
+    return this.paymentRepo
+      .createQueryBuilder('payment')
+      .leftJoinAndSelect(
+        'payment.invoice',
+        'invoice',
+      )
+      .leftJoinAndSelect(
+        'payment.recorder',
+        'recorder',
+      )
+      .where(
+        'invoice.student_id = :studentId',
+        {
+          studentId: id,
+        },
+      )
+      .orderBy(
+        'payment.paid_at',
+        'DESC',
+      )
+      .getMany();
   }
 
   async getLevelHistory(id: string) {
@@ -104,6 +203,7 @@ export class StudentsService {
       where: { id },
       relations: ['level_history'],
     });
+
     return student?.level_history ?? [];
   }
 }

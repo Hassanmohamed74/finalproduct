@@ -6,7 +6,7 @@ export async function seedRoles(dataSource: DataSource) {
   const roles = [
     { name: 'Super Admin', slug: 'super_admin', description: 'Full system control', is_system: true },
     { name: 'Branch Manager', slug: 'branch_manager', description: 'Day-to-day branch oversight', is_system: true },
-    { name: 'Sales Agent', slug: 'sales', description: 'CRM, registration, payments', is_system: true },
+    { name: 'Sales', slug: 'sales', description: 'CRM, registration, payments', is_system: true },
     { name: 'Finance Officer', slug: 'finance', description: 'Invoicing, installments, reconciliation', is_system: true },
     { name: 'Academic Coordinator', slug: 'academic', description: 'Course and group management', is_system: true },
     { name: 'Teacher', slug: 'teacher', description: 'LMS, attendance, grading, chat', is_system: true },

@@ -242,25 +242,43 @@ export interface Attendance {
 
 export interface Student {
   id: string;
-  first_name: string;
-  last_name: string;
-  email?: string;
-  phone?: string;
-  photo_url?: string;
-  address?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
-  national_id?: string;
-  date_of_birth?: string;
+  user_id: string;
+  student_number: string;
+
+  user: User;
+
   branch_id?: string;
   branch?: Branch;
-  status?: string;
+
   current_level?: string;
+  status?: string;
+
+  enrollment_date?: string;
+  placement_test_id?: string;
+
+  profile?: {
+    id: string;
+    student_id: string;
+    photo_url?: string | null;
+    date_of_birth?: string | null;
+    gender?: string | null;
+    address?: string | null;
+    national_id?: string | null;
+    education_level?: string | null;
+    emergency_contact_name?: string | null;
+    emergency_contact_phone?: string | null;
+    emergency_contact_relation?: string | null;
+    notes?: string | null;
+    created_at?: string;
+    updated_at?: string;
+  } | null;
+
   level_history?: LevelHistory[];
   payment_history?: Payment[];
   attendance_summary?: AttendanceSummary;
   certificates?: Certificate[];
   enrolled_groups?: Group[];
+
   created_at?: string;
   updated_at?: string;
 }
@@ -345,3 +363,73 @@ export interface RegisterDto {
   role_slug?: string;
   language?: string;
 }
+
+// ─── Two-Factor Authentication (SRS 7.2) ───
+
+/** Returned by /auth/login instead of AuthResponse when the account has 2FA enabled. */
+export interface TwoFactorChallenge {
+  requires_2fa: true;
+  temp_token: string;
+}
+
+export interface TwoFactorSetup {
+  secret: string;
+  otpauth_url: string;
+  qr_code_data_url: string;
+}
+
+// ─── Notifications (SRS 4.18) ───
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown> | null;
+  action_url?: string | null;
+  read_at?: string | null;
+  created_at: string;
+}
+
+export interface PaginatedNotifications {
+  items: AppNotification[];
+  total: number;
+  page: number;
+  limit: number;
+  unread_count: number;
+}
+
+// ─── Audit logs (SRS 7.2) ───
+
+export interface AuditLog {
+  id: string;
+  actor_id?: string | null;
+  actor_type?: string;
+  action: string;
+  module?: string;
+  target_type?: string | null;
+  target_id?: string | null;
+  before_state?: unknown;
+  after_state?: unknown;
+  description?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: string;
+}
+
+export interface PaginatedAuditLogs {
+  items: AuditLog[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface StoredFileInfo {
+  file_url: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string;
+  kind: string;
+}
+

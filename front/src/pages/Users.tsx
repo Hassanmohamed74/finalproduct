@@ -18,8 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import type { User, Branch, Role } from "@/types";
 import {
-  Plus, X, Pencil, Trash2, Eye, Search, Filter, KeyRound,
-  UserCheck, UserX, Mail, Phone, Building2, ShieldCheck
+  Plus, X, Pencil, Trash2, Search, Filter, KeyRound,
+  UserCheck, UserX
 } from "lucide-react";
 
 const createUserSchema = z.object({

@@ -166,10 +166,7 @@ export default function RolesPage() {
     }
   };
 
-  const isPermissionSelected = (module: string, action: string, permissions: Permission[]): boolean => {
-    const perm = permissions.find((p) => p.module === module && p.action === action);
-    return perm ? selectedPermissions.has(perm.id) : false;
-  };
+ 
 
   const columns = [
     { key: "name", header: "Name", sortable: true },

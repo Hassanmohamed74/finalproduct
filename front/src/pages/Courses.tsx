@@ -17,10 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import type { Course, Branch, InventoryItem } from "@/types";
+import type { Course, Branch } from "@/types";
 import {
   Plus, X, Pencil, Trash2, Eye, ChevronLeft, BookOpen, DollarSign,
-  Link2, Minus, Tag, Layers
+  Minus
 } from "lucide-react";
 
 const courseStatuses = ["active", "inactive", "archived"];

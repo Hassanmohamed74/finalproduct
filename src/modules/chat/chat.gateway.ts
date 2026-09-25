@@ -70,8 +70,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const scan = this.chatService.scanMessage(dto.body || '');
     if (scan?.violation) {
       // Log violation but don't save the message
-      await this.chatService.logViolation(
-        '00000000-0000-0000-0000-000000000000',
+            await this.chatService.logViolation(
+        null, // message was blocked before persistence — no message_id exists
         dto.room_id,
         userId,
         scan.rule,

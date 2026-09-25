@@ -5,8 +5,11 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { RequireRoles } from '@/components/common/RequireRoles';
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/ui/toaster';
+
 import LoginPage from '@/pages/Login';
 import RegisterPage from '@/pages/Register';
+import PlacementTestPage from '@/pages/PlacementTestPage';
+
 import DashboardPage from '@/pages/Dashboard';
 import LeadsPage from '@/pages/Leads';
 import StudentsPage from '@/pages/Students';
@@ -36,30 +39,124 @@ function App() {
   return (
     <>
       <Routes>
+        {/* Public Routes */}
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
+          }
         />
+
         <Route
           path="/register"
-          element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
+          element={
+            isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />
+          }
         />
+
+        {/* Public Placement Test */}
+        <Route
+          path="/placement-test"
+          element={<PlacementTestPage />}
+        />
+
+        {/* Protected Application Routes */}
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/leads" element={roleGate(['super_admin', 'branch_manager', 'sales'], <LeadsPage />)} />
-            <Route path="/students" element={roleGate(['super_admin', 'branch_manager', 'sales', 'finance', 'academic', 'teacher'], <StudentsPage />)} />
-            <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/groups" element={roleGate(['super_admin', 'academic', 'branch_manager', 'teacher'], <GroupsPage />)} />
-            <Route path="/sessions" element={roleGate(['super_admin', 'academic', 'branch_manager', 'teacher'], <SessionsPage />)} />
-            <Route path="/branches" element={roleGate(['super_admin', 'branch_manager'], <BranchesPage />)} />
-            <Route path="/users" element={roleGate(['super_admin', 'branch_manager', 'hr'], <UsersPage />)} />
-            <Route path="/roles" element={roleGate(['super_admin'], <RolesPage />)} />
+
+            <Route
+              path="/dashboard"
+              element={<DashboardPage />}
+            />
+
+            <Route
+              path="/leads"
+              element={roleGate(
+                ['super_admin', 'branch_manager', 'sales'],
+                <LeadsPage />,
+              )}
+            />
+
+            <Route
+              path="/students"
+              element={roleGate(
+                [
+                  'super_admin',
+                  'branch_manager',
+                  'sales',
+                  'finance',
+                  'academic',
+                  'teacher',
+                ],
+                <StudentsPage />,
+              )}
+            />
+
+            <Route
+              path="/courses"
+              element={<CoursesPage />}
+            />
+
+            <Route
+              path="/groups"
+              element={roleGate(
+                [
+                  'super_admin',
+                  'academic',
+                  'branch_manager',
+                  'teacher',
+                ],
+                <GroupsPage />,
+              )}
+            />
+
+            <Route
+              path="/sessions"
+              element={roleGate(
+                [
+                  'super_admin',
+                  'academic',
+                  'branch_manager',
+                  'teacher',
+                ],
+                <SessionsPage />,
+              )}
+            />
+
+            <Route
+              path="/branches"
+              element={roleGate(
+                ['super_admin', 'branch_manager'],
+                <BranchesPage />,
+              )}
+            />
+
+            <Route
+              path="/users"
+              element={roleGate(
+                ['super_admin', 'branch_manager', 'hr'],
+                <UsersPage />,
+              )}
+            />
+
+            <Route
+              path="/roles"
+              element={roleGate(
+                ['super_admin'],
+                <RolesPage />,
+              )}
+            />
           </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        {/* Unknown Routes */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
       </Routes>
+
       <Toaster />
     </>
   );

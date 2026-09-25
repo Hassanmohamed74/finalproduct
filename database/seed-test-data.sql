@@ -1,11 +1,13 @@
 -- SPEAK UP TMS - COMPLETE TEST SEED
--- Generated from speakup_tms_full_schema.sql
--- Includes every schema table, multiple RBAC accounts, branches, courses, groups,
--- LMS, finance, HR, inventory, activities, chat, website and system records.
+-- Run this file only after applying speakup_tms_full_schema.sql successfully.
+-- This seed does not create, alter, or relax application schema constraints.
 BEGIN;
 SET TIME ZONE 'Africa/Cairo';
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- ==========================================
+-- DATA SEED SECTION
+-- ==========================================
 
 INSERT INTO branches (id,name,address,phone,email,classroom_count,status) VALUES
 ('66fc3021-8661-503f-b5c8-cea9e67629e6','Seed Main Branch','12 Nile Street, Downtown Cairo','+201100100001','seed.main@speakup.test',3,'active'),
@@ -249,7 +251,7 @@ INSERT INTO leads (id,first_name,last_name,phone,email,national_id,source,status
 ('a933cad8-3039-5942-abdd-0ecc8fa5a37b','Ahmed','Hassan','+201300000001','seed.ahmed.lead@speakup.test','SEED-NID-001','website','new','A1','Seed CRM lead for testing','78cfa859-27ec-5273-8937-3446b7575ce2','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a'),
 ('ef3f17c4-deee-5015-a3fb-7192a7dc5c6f','Mona','Ali','+201300000002','seed.mona.lead@speakup.test','SEED-NID-002','referral','test_scheduled','B1','Seed CRM lead for testing','78cfa859-27ec-5273-8937-3446b7575ce2','66fc3021-8661-503f-b5c8-cea9e67629e6'),
 ('01d3e754-72b9-5c8c-9c34-20b67cbce1d3','Omar','Samir','+201300000003','seed.omar.lead@speakup.test','SEED-NID-003','walk_in','interested','A2','Seed CRM lead for testing','78cfa859-27ec-5273-8937-3446b7575ce2','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a'),
-('dc397060-ffb5-5c5a-b05e-bff9147c5012','Sara','Nabil','+201300000004','seed.sara.lead@speakup.test','SEED-NID-004','website','enrolled','C1','Seed CRM lead for testing','78cfa859-27ec-5273-8937-3446b7575ce2','66fc3021-8661-503f-b5c8-cea9e67629e6')
+('dc397060-ffb5-5c5a-b05e-bff9147c5012','Sara','Nabil','+201300000004','seed.sara.lead@speakup.test','SEED-NID-004','website','enrolled','C1','Seed CRM lead for testing','78cfa859-27ec-5273-8937-3446b7575ce2','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a')
 ON CONFLICT DO NOTHING;
 
 
@@ -268,13 +270,57 @@ INSERT INTO courses (id,name,code,level,duration_hours,syllabus,description,defa
 ('ff88bcad-a1c8-57e4-96e6-45600846552a','English C2 Proficiency','SEED-C2-2026','C2',72,'Seed syllabus','Seed C2 course for testing',4800,14,70,'active')
 ON CONFLICT DO NOTHING;
 
-
-INSERT INTO inventory_items (id,sku,name,description,category,unit_cost,unit_price,unit_of_measure,reorder_level,status,branch_id) VALUES
-('743ef857-e671-5a04-9f16-fbab3463d152','SEED-BOOK-A1','A1 Student Book','Seed book','book',180,250,'piece',10,'active','66fc3021-8661-503f-b5c8-cea9e67629e6'),
-('46880901-cff0-5c43-a855-91d0d0b457d5','SEED-WB-A1','A1 Workbook','Seed workbook','workbook',120,180,'piece',15,'active','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a'),
-('484c9a93-e459-51f7-b679-e5e9c6f7ff14','SEED-MUG','SpeakUp Mug','Seed merchandise','merchandise',80,150,'piece',5,'active','5a783991-fdfa-516a-802b-ef204ee4b57f')
+INSERT INTO inventory_items
+(
+    id,
+    sku,
+    name,
+    description,
+    category,
+    unit_cost,
+    sale_price,
+    unit_of_measure,
+    reorder_level,
+    status
+)
+VALUES
+(
+    '743ef857-e671-5a04-9f16-fbab3463d152',
+    'SEED-BOOK-A1',
+    'A1 Student Book',
+    'Seed book',
+    'book',
+    180,
+    250,
+    'piece',
+    10,
+    'active'
+),
+(
+    '46880901-cff0-5c43-a855-91d0d0b457d5',
+    'SEED-WB-A1',
+    'A1 Workbook',
+    'Seed workbook',
+    'workbook',
+    120,
+    180,
+    'piece',
+    15,
+    'active'
+),
+(
+    '484c9a93-e459-51f7-b679-e5e9c6f7ff14',
+    'SEED-MUG',
+    'SpeakUp Mug',
+    'Seed merchandise',
+    'merchandise',
+    80,
+    150,
+    'piece',
+    5,
+    'active'
+)
 ON CONFLICT DO NOTHING;
-
 
 -- lead_activities
 INSERT INTO lead_activities (id,lead_id,type,note) VALUES
@@ -331,10 +377,32 @@ ON CONFLICT DO NOTHING;
 
 
 -- groups
-INSERT INTO groups (id,name,course_id,teacher_id,branch_id,capacity,start_date,end_date,status,mode) VALUES
-('fe652f07-65d3-586c-a5c3-b3ecaeeda736','Seed Groups','958e6b86-4e2e-5096-8e80-eb398a91350e','f54bc944-43f9-5b09-8a79-979d2186bc31','66fc3021-8661-503f-b5c8-cea9e67629e6',20,CURRENT_DATE,CURRENT_DATE+INTERVAL '60 days','upcoming','in_person')
+-- groups
+-- IMPORTANT: teacher_id must reference a user with the teacher role.
+INSERT INTO groups (
+    id,
+    name,
+    course_id,
+    teacher_id,
+    branch_id,
+    capacity,
+    start_date,
+    end_date,
+    status,
+    mode
+) VALUES (
+    'fe652f07-65d3-586c-a5c3-b3ecaeeda736',
+    'Seed Groups',
+    '958e6b86-4e2e-5096-8e80-eb398a91350e',
+    'd3995993-c92b-5696-b5eb-f7f09a1031e4',
+    '66fc3021-8661-503f-b5c8-cea9e67629e6',
+    20,
+    CURRENT_DATE,
+    CURRENT_DATE + INTERVAL '60 days',
+    'upcoming',
+    'in_person'
+)
 ON CONFLICT DO NOTHING;
-
 
 -- group_schedules
 INSERT INTO group_schedules (id,group_id,day_of_week,start_time,end_time,is_recurring) VALUES
@@ -368,13 +436,13 @@ ON CONFLICT DO NOTHING;
 
 -- test_slots
 INSERT INTO test_slots (id,branch_id,examiner_id,date,start_time,end_time,mode,capacity,booked_count,status) VALUES
-('b7c26f95-cd8a-5d42-bd72-835379c4c2d5','66fc3021-8661-503f-b5c8-cea9e67629e6','f54bc944-43f9-5b09-8a79-979d2186bc31',CURRENT_DATE+INTERVAL '1 day','12:00','13:00','in_person',1,0,'open')
+('b7c26f95-cd8a-5d42-bd72-835379c4c2d5','66fc3021-8661-503f-b5c8-cea9e67629e6','d3995993-c92b-5696-b5eb-f7f09a1031e4',CURRENT_DATE+INTERVAL '1 day','12:00','13:00','in_person',1,0,'open')
 ON CONFLICT DO NOTHING;
 
 
 -- placement_tests
 INSERT INTO placement_tests (id,lead_id,slot_id,examiner_id,scheduled_at,status) VALUES
-('4528edc2-673c-51c2-8b4a-ec9405a70eea','a933cad8-3039-5942-abdd-0ecc8fa5a37b','b7c26f95-cd8a-5d42-bd72-835379c4c2d5','f54bc944-43f9-5b09-8a79-979d2186bc31',NOW()+INTERVAL '1 day','scheduled')
+('4528edc2-673c-51c2-8b4a-ec9405a70eea','a933cad8-3039-5942-abdd-0ecc8fa5a37b','b7c26f95-cd8a-5d42-bd72-835379c4c2d5','d3995993-c92b-5696-b5eb-f7f09a1031e4',NOW()+INTERVAL '1 day','scheduled')
 ON CONFLICT DO NOTHING;
 
 
@@ -452,13 +520,13 @@ ON CONFLICT DO NOTHING;
 
 -- teacher_evaluations
 INSERT INTO teacher_evaluations (id,group_id,student_id,teacher_id,term,form_data,overall_comment,is_shared_with_student) VALUES
-('067a897d-836e-5b52-806c-f360d1c80aa3','fe652f07-65d3-586c-a5c3-b3ecaeeda736','b8430eec-4181-577f-a38b-933397704e7a','f54bc944-43f9-5b09-8a79-979d2186bc31','Seed Term','{}'::jsonb,'Seed evaluation',TRUE)
+('067a897d-836e-5b52-806c-f360d1c80aa3','fe652f07-65d3-586c-a5c3-b3ecaeeda736','b8430eec-4181-577f-a38b-933397704e7a','d3995993-c92b-5696-b5eb-f7f09a1031e4','Seed Term','{}'::jsonb,'Seed evaluation',TRUE)
 ON CONFLICT DO NOTHING;
 
 
 -- student_surveys
 INSERT INTO student_surveys (id,group_id,student_id,teacher_id,term,responses,overall_rating,comment,is_anonymous) VALUES
-('48e15e8a-a9ac-5cf0-9d43-e0dcf3f69067','fe652f07-65d3-586c-a5c3-b3ecaeeda736','b8430eec-4181-577f-a38b-933397704e7a','f54bc944-43f9-5b09-8a79-979d2186bc31','Seed Term','{"teaching":5,"materials":4,"pace":5}'::jsonb,5,'Seed survey',FALSE)
+('48e15e8a-a9ac-5cf0-9d43-e0dcf3f69067','fe652f07-65d3-586c-a5c3-b3ecaeeda736','b8430eec-4181-577f-a38b-933397704e7a','d3995993-c92b-5696-b5eb-f7f09a1031e4','Seed Term','{"teaching":5,"materials":4,"pace":5}'::jsonb,5,'Seed survey',FALSE)
 ON CONFLICT DO NOTHING;
 
 
@@ -479,6 +547,37 @@ INSERT INTO invoices (id,invoice_number,enrollment_id,student_id,branch_id,subto
 ('72413858-0205-5187-904b-9c4c1feb949a','SEED-INV-001','0e84a66f-3de5-5b53-bff7-0bb30a870d83','b8430eec-4181-577f-a38b-933397704e7a','66fc3021-8661-503f-b5c8-cea9e67629e6',2500,2500,1500,CURRENT_DATE+INTERVAL '15 days',0,0,1000,'partial',FALSE,'Seed invoice')
 ON CONFLICT DO NOTHING;
 
+
+-- invoice_items
+INSERT INTO invoice_items
+(
+    id,
+    invoice_id,
+    item_type,
+    course_id,
+    inventory_item_id,
+    description,
+    quantity,
+    unit_price,
+    discount_amount,
+    tax_amount,
+    total_amount
+)
+VALUES
+(
+    '4b010c71-2621-5a45-9831-c4217154508e',
+    '72413858-0205-5187-904b-9c4c1feb949a',
+    'book',
+    NULL,
+    '743ef857-e671-5a04-9f16-fbab3463d152',
+    'A1 Student Book',
+    1,
+    250.00,
+    0.00,
+    0.00,
+    250.00
+)
+ON CONFLICT DO NOTHING;
 
 -- payments
 INSERT INTO payments (id,invoice_id,amount,method,paid_at,status,receipt_number) VALUES
@@ -503,543 +602,4 @@ INSERT INTO financial_transactions (id,transaction_type,direction,amount,transac
 ('2979ba26-39f9-5515-bdfc-0366ce06b625','payment','in',1000,NOW()-INTERVAL '3 days','Seed payment')
 ON CONFLICT DO NOTHING;
 
-
--- invoice_items
-INSERT INTO invoice_items (id,invoice_id,item_type,description,total_amount,quantity,unit_price,discount_amount,tax_amount) VALUES
-('481ea0c6-834d-5411-a10e-35af026b3d29','72413858-0205-5187-904b-9c4c1feb949a','course','A1 course',2500,1,2500,0,0)
-ON CONFLICT DO NOTHING;
-
-
--- certificate_templates
-INSERT INTO certificate_templates (id,name,html_template,placeholders,is_default,status) VALUES
-('dba32d6c-6ecf-52a2-bc60-fce1fe9381b7','Seed Completion Certificate','<html><body>{{student_name}} - {{course_name}}</body></html>','{"student_name":"Student name","course_name":"Course name"}'::jsonb,TRUE,'active')
-ON CONFLICT DO NOTHING;
-
-
--- certificates
-INSERT INTO certificates (id,student_id,course_id,group_id,code,issue_date,status,is_auto_issued) VALUES
-('acb0d651-459a-5164-927d-f464bf7423ae','b8430eec-4181-577f-a38b-933397704e7a','958e6b86-4e2e-5096-8e80-eb398a91350e','fe652f07-65d3-586c-a5c3-b3ecaeeda736','SEED-CERT-001',CURRENT_DATE-INTERVAL '10 days','active',TRUE)
-ON CONFLICT DO NOTHING;
-
-
--- employees
-INSERT INTO employees (id,user_id,employee_type,job_title,contract_start,employee_number,salary,currency,status) VALUES
-('b28c81bb-4473-56fb-862f-b4acf2938b95','f54bc944-43f9-5b09-8a79-979d2186bc31','full_time','Seed Teacher',CURRENT_DATE-INTERVAL '180 days','SEED-EMP-001',18000,'EGP','active')
-ON CONFLICT DO NOTHING;
-
-
--- employee_documents
-INSERT INTO employee_documents (id,employee_id,name,file_url,document_type,expiry_date) VALUES
-('37b0667f-f204-583f-a62c-1941f2811272','b28c81bb-4473-56fb-862f-b4acf2938b95','Seed Contract','https://example.com/seed-contract.pdf','contract',CURRENT_DATE+INTERVAL '300 days')
-ON CONFLICT DO NOTHING;
-
-
--- teacher_availabilities
-INSERT INTO teacher_availabilities (id,employee_id,day_of_week,start_time,end_time,is_available,note) VALUES
-('9a1eeb1f-8923-526f-a989-d2d0741afb9a','b28c81bb-4473-56fb-862f-b4acf2938b95',1,'09:00','17:00',TRUE,'Seed availability')
-ON CONFLICT DO NOTHING;
-
-
--- leave_requests
-INSERT INTO leave_requests (id,employee_id,type,start_date,end_date,days_count,reason,status,approved_by,approved_at) VALUES
-('5e1da629-31cd-5645-92c2-bf9e8c38d935','b28c81bb-4473-56fb-862f-b4acf2938b95','annual',CURRENT_DATE+INTERVAL '20 days',CURRENT_DATE+INTERVAL '22 days',3,'Seed leave','approved','cc7abac3-7af3-5fd3-8560-e2eaea1a057c',NOW())
-ON CONFLICT DO NOTHING;
-
-
--- payroll_periods
-INSERT INTO payroll_periods (id,name,start_date,end_date,status) VALUES
-('72b961fe-e3d6-5cd3-a0da-14ffd38ed053','Seed Payroll Current',DATE_TRUNC('month',CURRENT_DATE)::date,(DATE_TRUNC('month',CURRENT_DATE)+INTERVAL '1 month - 1 day')::date,'open')
-ON CONFLICT DO NOTHING;
-
-
--- payroll_entries
-INSERT INTO payroll_entries (id,payroll_period_id,employee_id,base_amount,total_amount,hours_worked,classes_taught,bonus,deductions,hourly_rate,status) VALUES
-('437291c9-904c-50d4-9b60-82b441dcbe64','72b961fe-e3d6-5cd3-a0da-14ffd38ed053','b28c81bb-4473-56fb-862f-b4acf2938b95',18000,18500,160,20,1000,500,112.5,'approved')
-ON CONFLICT DO NOTHING;
-
-
--- activities
-INSERT INTO activities (id,name,type,date,branch_id,capacity,start_time,end_time,location,fee,target_levels,target_groups,is_open_to_all,status) VALUES
-('bea0b06b-b2d9-5e79-9f65-dc26f5f9faa7','Seed Conversation Club','conversation_club',CURRENT_DATE+INTERVAL '14 days','66fc3021-8661-503f-b5c8-cea9e67629e6',30,'18:00','20:00','Seed Main Branch',100,'["A1","A2","B1"]'::jsonb,'["seed"]'::jsonb,TRUE,'open')
-ON CONFLICT DO NOTHING;
-
-
--- activity_registrations
-INSERT INTO activity_registrations (id,activity_id,student_id,status,paid_amount) VALUES
-('e0a3a323-7024-5183-bedd-4757dc967367','bea0b06b-b2d9-5e79-9f65-dc26f5f9faa7','b8430eec-4181-577f-a38b-933397704e7a','registered',100)
-ON CONFLICT DO NOTHING;
-
-
--- activity_photos
-INSERT INTO activity_photos (id,activity_id,file_url,caption) VALUES
-('8e760259-c262-550e-b584-70e1f73df0f3','bea0b06b-b2d9-5e79-9f65-dc26f5f9faa7','https://example.com/seed-activity.jpg','Seed activity photo')
-ON CONFLICT DO NOTHING;
-
-
--- stock_levels
-INSERT INTO stock_levels (id,item_id,branch_id,quantity,reserved_quantity,last_counted_at) VALUES
-('bc7b88ed-46f6-559b-8f38-d40a40acc3c8','743ef857-e671-5a04-9f16-fbab3463d152','66fc3021-8661-503f-b5c8-cea9e67629e6',50,2,NOW())
-ON CONFLICT DO NOTHING;
-
-
--- stock_moves
-INSERT INTO stock_moves (id,item_id,branch_id,type,quantity,reason,unit_cost,reference_type) VALUES
-('89fe2141-85c5-538b-95c7-e4fa5e937a3b','743ef857-e671-5a04-9f16-fbab3463d152','66fc3021-8661-503f-b5c8-cea9e67629e6','in',50,'Seed opening stock',180,'purchase')
-ON CONFLICT DO NOTHING;
-
-
--- student_item_issues
-INSERT INTO student_item_issues (id,student_id,item_id,branch_id,quantity,cost,issued_at) VALUES
-('8e057a5a-f34d-5bb4-b394-d458df3dd5b3','b8430eec-4181-577f-a38b-933397704e7a','743ef857-e671-5a04-9f16-fbab3463d152','66fc3021-8661-503f-b5c8-cea9e67629e6',1,250,NOW()-INTERVAL '4 days')
-ON CONFLICT DO NOTHING;
-
-
--- kb_categories
-INSERT INTO kb_categories (id,name,slug,description,visibility,sort_order) VALUES
-('c7cd867b-4245-5707-b9cb-30e2f62e0e0f','Seed Staff Guides','seed-staff-guides','Seed knowledge base category','staff',1)
-ON CONFLICT DO NOTHING;
-
-
--- kb_articles
-INSERT INTO kb_articles (id,category_id,title,body,slug,excerpt,version,visibility,is_pinned,view_count) VALUES
-('642be777-9c18-5d37-af58-b0ad1bf2e063','c7cd867b-4245-5707-b9cb-30e2f62e0e0f','Seed Attendance Guide','Seed article body for testing.','seed-attendance-guide','Seed article',1,'staff',TRUE,10)
-ON CONFLICT DO NOTHING;
-
-
--- kb_article_versions
-INSERT INTO kb_article_versions (id,article_id,body,version_number,change_note) VALUES
-('3053f295-9e35-578f-bc5e-0f199dc3c2d8','642be777-9c18-5d37-af58-b0ad1bf2e063','Seed version body',1,'Initial seed')
-ON CONFLICT DO NOTHING;
-
-
--- chat_rooms
-INSERT INTO chat_rooms (id,type,name,topic) VALUES
-('238d8c87-ad12-5b9f-a30d-94261a593f33','group','Seed A1 Chat','A1 student/teacher chat')
-ON CONFLICT DO NOTHING;
-
-
--- chat_room_members
-INSERT INTO chat_room_members (id,room_id,user_id,role,is_muted,is_banned) VALUES
-('7867a92a-7db3-556c-9e5a-de2a56557f9d','238d8c87-ad12-5b9f-a30d-94261a593f33','f54bc944-43f9-5b09-8a79-979d2186bc31','member',FALSE,FALSE)
-ON CONFLICT DO NOTHING;
-
-
--- chat_messages
-INSERT INTO chat_messages (id,room_id,sender_id,body,type,is_flagged) VALUES
-('652b95ff-5d8e-5304-91ae-263b0ee9be47','238d8c87-ad12-5b9f-a30d-94261a593f33','f54bc944-43f9-5b09-8a79-979d2186bc31','Hello from the SpeakUp seed dataset.','text',FALSE)
-ON CONFLICT DO NOTHING;
-
-
--- chat_violations
-INSERT INTO chat_violations (id,message_id,room_id,sender_id,rule_matched,original_message,action_taken,detection_method,is_false_positive,moderator_id,moderator_note) VALUES
-('13aa70cd-1efb-5332-b1ae-40b422460757','652b95ff-5d8e-5304-91ae-263b0ee9be47','238d8c87-ad12-5b9f-a30d-94261a593f33','f54bc944-43f9-5b09-8a79-979d2186bc31','test_rule','seed flagged message','warned','text_regex',FALSE,'abe6a78b-d48f-534c-976b-5deb78a34c18','Seed moderation case')
-ON CONFLICT DO NOTHING;
-
-
--- chat_strikes
-INSERT INTO chat_strikes (id,user_id,violation_id,strike_number,action,is_active,applied_by,expires_at) VALUES
-('2ae02f64-9fd8-5811-9fe7-20ef8a7c52d0','f54bc944-43f9-5b09-8a79-979d2186bc31','13aa70cd-1efb-5332-b1ae-40b422460757',1,'warning',TRUE,'abe6a78b-d48f-534c-976b-5deb78a34c18',NOW()+INTERVAL '30 days')
-ON CONFLICT DO NOTHING;
-
-
--- blog_posts
-INSERT INTO blog_posts (id,title,content,slug,excerpt,status,published_at,view_count) VALUES
-('d2ced53b-23b1-511c-9319-51160de826c0','Seed English Learning Tips','Seed public blog post.','seed-english-learning-tips','Seed excerpt','published',NOW()-INTERVAL '5 days',25)
-ON CONFLICT DO NOTHING;
-
-
--- testimonials
-INSERT INTO testimonials (id,name,content,rating,course_name,is_featured,status) VALUES
-('5dcd4ed8-c9cc-577e-88c5-ce4e75731545','Seed Student','Great learning experience.',5,'English A1 Foundation',TRUE,'approved')
-ON CONFLICT DO NOTHING;
-
-
--- page_views
-INSERT INTO page_views (id,page_path,referrer,user_agent,ip_address,session_id) VALUES
-('c5cef779-997f-50d0-af2c-b4c9eaec6e2f','/courses/english-a1','https://google.com','Seed Browser','127.0.0.1','seed-session-001')
-ON CONFLICT DO NOTHING;
-
-
--- notifications
-INSERT INTO notifications (id,user_id,type,title,body,data,action_url) VALUES
-('708dff05-e9d4-5444-bc1c-afa8b8db0fc4','f54bc944-43f9-5b09-8a79-979d2186bc31','seed','Seed Notification','This is a test notification.','{"seed":true}'::jsonb,'/dashboard')
-ON CONFLICT DO NOTHING;
-
-
--- notification_preferences
-INSERT INTO notification_preferences (id,user_id,channel,module,event,is_enabled) VALUES
-('22b44015-0a7f-51c0-b8db-6ed9851d8fe2','f54bc944-43f9-5b09-8a79-979d2186bc31','in_app','attendance','marked',TRUE)
-ON CONFLICT DO NOTHING;
-
-
--- audit_logs
-INSERT INTO audit_logs (id,action,module,target_type,target_id,before_state,after_state,description,ip_address,user_agent) VALUES
-('1f219b56-3b9f-51f8-b0f8-16dd3b3dfbaf','seed_data','system','seed','f54bc944-43f9-5b09-8a79-979d2186bc31'::uuid,'{}'::jsonb,'{"status":"seeded"}'::jsonb,'Seeded test dataset','127.0.0.1','seed-script')
-ON CONFLICT DO NOTHING;
-
-
--- settings
-INSERT INTO settings (id,key,value,"group",is_encrypted,description) VALUES
-('4812b6c5-1fd3-575c-98d5-87249939f88b','seed_mode','true','development',FALSE,'Marks database as seeded for testing')
-ON CONFLICT DO NOTHING;
-
-
-INSERT INTO classrooms (id,branch_id,name,capacity,type,status) VALUES
-('b89065d2-3297-5761-b917-3b82a073c8fb','66fc3021-8661-503f-b5c8-cea9e67629e6','Seed Lab B',16,'lab','active'),
-('d7a829bf-085f-5999-a7a0-81a29f4fa6c3','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a','Seed Room 202',20,'standard','active')
-ON CONFLICT DO NOTHING;
-
-
-INSERT INTO leads (id,first_name,last_name,phone,email,national_id,source,status,level_interest,notes,assigned_to,branch_id) VALUES
-('ef3f17c4-deee-5015-a3fb-7192a7dc5c6f','Mona','Seed','+201300000002','seed.mona@speakup.test','SEED-NID-002','referral','test_scheduled','B1','Seed placement candidate','78cfa859-27ec-5273-8937-3446b7575ce2','66fc3021-8661-503f-b5c8-cea9e67629e6'),
-('01d3e754-72b9-5c8c-9c34-20b67cbce1d3','Omar','Seed','+201300000003','seed.omar@speakup.test','SEED-NID-003','walk_in','interested','A2','Weekend request','78cfa859-27ec-5273-8937-3446b7575ce2','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a')
-ON CONFLICT DO NOTHING;
-
-
-INSERT INTO students (id,user_id,student_number,current_level,status,enrollment_date,branch_id) VALUES
-('72233c04-278a-5fb3-bf78-af38772e9a13','006db1c6-18d5-587c-8640-6996aa62605d','SEED-STU-002','B1','active',CURRENT_DATE-INTERVAL '30 days','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a')
-ON CONFLICT DO NOTHING;
-
-
-INSERT INTO courses (id,name,code,level,duration_hours,syllabus,description,default_price,min_age,max_age,status) VALUES
-('70d3df4e-04ce-56de-901a-f3bd6a5a0f79','English A2 Elementary','SEED-A2-2026','A2',60,'Seed A2 syllabus','Seed A2',2800,14,70,'active'),
-('455c70b3-8433-5dbb-a3a0-105111f88bb5','English B1 Intermediate','SEED-B1-2026','B1',72,'Seed B1 syllabus','Seed B1',3200,14,70,'active'),
-('9e91e52e-6f7d-596d-bf63-f601cd60566a','English B2 Upper Intermediate','SEED-B2-2026','B2',72,'Seed B2 syllabus','Seed B2',3600,15,70,'active'),
-('587707ba-b5dd-580e-b9cf-64850ee9c831','English C1 Advanced','SEED-C1-2026','C1',80,'Seed C1 syllabus','Seed C1',4200,16,70,'active'),
-('ff88bcad-a1c8-57e4-96e6-45600846552a','English C2 Proficiency','SEED-C2-2026','C2',80,'Seed C2 syllabus','Seed C2',4800,16,70,'active')
-ON CONFLICT DO NOTHING;
-
-
-INSERT INTO groups (id,name,course_id,teacher_id,substitute_teacher_id,branch_id,capacity,mode,start_date,end_date,status,created_by) VALUES
-('f92fa7a5-6c6a-596c-9af1-dc13dfa70976','Seed B1 Evening','455c70b3-8433-5dbb-a3a0-105111f88bb5','76405d67-fa63-58d9-bfd7-601661734136','d3995993-c92b-5696-b5eb-f7f09a1031e4','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a',18,'hybrid',CURRENT_DATE-INTERVAL '20 days',CURRENT_DATE+INTERVAL '70 days','active','9b3dc22e-70c1-5ab5-85c3-25adcbc05b77'),
-('04c1d0a6-9130-5772-b133-8de94693d52f','Seed A2 Online','70d3df4e-04ce-56de-901a-f3bd6a5a0f79','d3995993-c92b-5696-b5eb-f7f09a1031e4',NULL,'66fc3021-8661-503f-b5c8-cea9e67629e6',25,'online',CURRENT_DATE+INTERVAL '5 days',CURRENT_DATE+INTERVAL '95 days','upcoming','9b3dc22e-70c1-5ab5-85c3-25adcbc05b77'),
-('c309a563-143b-5bd9-861b-334a0bfec61a','Seed C1 Weekend','587707ba-b5dd-580e-b9cf-64850ee9c831','76405d67-fa63-58d9-bfd7-601661734136',NULL,'41a77ad8-a44e-5f27-9b30-f1ad0e62e98a',20,'in_person',CURRENT_DATE+INTERVAL '7 days',CURRENT_DATE+INTERVAL '110 days','upcoming','9b3dc22e-70c1-5ab5-85c3-25adcbc05b77')
-ON CONFLICT DO NOTHING;
-
-
--- Explicit role/user testing matrix
--- Students and staff are intentionally distributed across three branches.
-
--- Course prerequisites
-INSERT INTO course_prerequisites(course_id,prerequisite_course_id,is_strict)
-VALUES
-('70d3df4e-04ce-56de-901a-f3bd6a5a0f79','958e6b86-4e2e-5096-8e80-eb398a91350e',TRUE),
-('455c70b3-8433-5dbb-a3a0-105111f88bb5','70d3df4e-04ce-56de-901a-f3bd6a5a0f79',TRUE),
-('9e91e52e-6f7d-596d-bf63-f601cd60566a','455c70b3-8433-5dbb-a3a0-105111f88bb5',FALSE),
-('587707ba-b5dd-580e-b9cf-64850ee9c831','9e91e52e-6f7d-596d-bf63-f601cd60566a',TRUE)
-ON CONFLICT DO NOTHING;
-
--- Seed group memberships
-INSERT INTO group_students(id,group_id,student_id,enrolled_by,status)
-VALUES
-('709c8b8d-6893-5a87-9434-ecc45e1db08d','fe652f07-65d3-586c-a5c3-b3ecaeeda736','b8430eec-4181-577f-a38b-933397704e7a','78cfa859-27ec-5273-8937-3446b7575ce2','active'),
-('8bbccc69-e732-53f8-937b-8d0a2279d2b4','f92fa7a5-6c6a-596c-9af1-dc13dfa70976','72233c04-278a-5fb3-bf78-af38772e9a13','78cfa859-27ec-5273-8937-3446b7575ce2','active'),
-('f9395ab5-2415-516c-a62a-09d5d7cb2f65','04c1d0a6-9130-5772-b133-8de94693d52f','b8430eec-4181-577f-a38b-933397704e7a','9b3dc22e-70c1-5ab5-85c3-25adcbc05b77','active'),
-('96a02141-fea4-5c98-b6f9-e0f8830cc22d','c309a563-143b-5bd9-861b-334a0bfec61a','72233c04-278a-5fb3-bf78-af38772e9a13','9b3dc22e-70c1-5ab5-85c3-25adcbc05b77','active')
-ON CONFLICT DO NOTHING;
-
--- Make the branch manager relationship explicit again after user inserts.
-UPDATE branches SET manager_id=(SELECT id FROM users WHERE email='test.admin@speakup.test') WHERE id='66fc3021-8661-503f-b5c8-cea9e67629e6';
-UPDATE branches SET manager_id=(SELECT id FROM users WHERE email='test.manager@speakup.test') WHERE id='41a77ad8-a44e-5f27-9b30-f1ad0e62e98a';
-
--- Finish deterministic labels overwritten by schema triggers.
-UPDATE students SET student_number='SEED-STU-001' WHERE id='b8430eec-4181-577f-a38b-933397704e7a';
-UPDATE students SET student_number='SEED-STU-002' WHERE id='72233c04-278a-5fb3-bf78-af38772e9a13';
-
-
--- Additional schedules
-INSERT INTO group_schedules(id,group_id,day_of_week,start_time,end_time,classroom_id,is_recurring)
-VALUES
-('9511df77-6a69-539e-8aa7-1b65eed78d5a','fe652f07-65d3-586c-a5c3-b3ecaeeda736',3,'09:00','11:00','20ce1287-84e6-57aa-9854-2d55a7398b69',TRUE),
-('8b6fea51-5ec7-5518-8253-f5eaa59562d0','f92fa7a5-6c6a-596c-9af1-dc13dfa70976',2,'18:00','20:00','4e6e86d8-e553-5cac-9735-287a4ba476ac',TRUE),
-('77dd226a-7b16-5cd7-9eb4-cd5e13a49f73','f92fa7a5-6c6a-596c-9af1-dc13dfa70976',4,'18:00','20:00','4e6e86d8-e553-5cac-9735-287a4ba476ac',TRUE)
-ON CONFLICT DO NOTHING;
-
--- Placement links: generic test slot/placement rows are valid and tied to real seed users.
-UPDATE placement_tests SET slot_id='b7c26f95-cd8a-5d42-bd72-835379c4c2d5', examiner_id='9b3dc22e-70c1-5ab5-85c3-25adcbc05b77'
-WHERE id='4528edc2-673c-51c2-8b4a-ec9405a70eea';
-
--- Assignments/LMS/finance generic rows are already created for all tables.
--- Add a second LMS module/lesson/resource, assignment and quiz scenario.
-INSERT INTO lms_modules(id,group_id,name,description,"order",is_published,published_at,created_by)
-VALUES
-('8018a412-56f7-5dd9-ab41-41f48f3f2a7d','fe652f07-65d3-586c-a5c3-b3ecaeeda736','Seed Module 2','Speaking practice',2,TRUE,NOW(), 'd3995993-c92b-5696-b5eb-f7f09a1031e4')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO lms_lessons(id,module_id,name,content,type,duration_minutes,"order",is_published)
-VALUES
-('ff1fa39c-5c51-5dce-ab4b-93f7670dd539','8018a412-56f7-5dd9-ab41-41f48f3f2a7d','Seed Speaking Task','One-minute self introduction.','content',30,1,TRUE)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO lms_resources(id,lesson_id,name,type,external_url,access_control)
-VALUES
-('88284900-9e83-5796-b0f6-eb1f0ad5f2ee','ff1fa39c-5c51-5dce-ab4b-93f7670dd539','Speaking Prompt','link','https://example.com/seed-speaking','enrolled')
-ON CONFLICT DO NOTHING;
-
-
-
--- 14) TEST QUALITY FIXUPS
-UPDATE groups SET teacher_id='d3995993-c92b-5696-b5eb-f7f09a1031e4' WHERE id='fe652f07-65d3-586c-a5c3-b3ecaeeda736';
-UPDATE test_slots SET examiner_id='9b3dc22e-70c1-5ab5-85c3-25adcbc05b77' WHERE id='b7c26f95-cd8a-5d42-bd72-835379c4c2d5';
-UPDATE teacher_evaluations SET teacher_id='d3995993-c92b-5696-b5eb-f7f09a1031e4' WHERE id='067a897d-836e-5b52-806c-f360d1c80aa3';
-UPDATE student_surveys SET teacher_id='d3995993-c92b-5696-b5eb-f7f09a1031e4' WHERE id='48e15e8a-a9ac-5cf0-9d43-e0dcf3f69067';
-UPDATE employees SET user_id='d3995993-c92b-5696-b5eb-f7f09a1031e4' WHERE id='b28c81bb-4473-56fb-862f-b4acf2938b95';
-
--- Extra employee records for HR/teacher testing
-INSERT INTO employees(id,user_id,employee_number,employee_type,job_title,contract_start,salary,currency,status)
-VALUES
-('36f5ca2e-4a22-521a-be89-c2df80e55605','76405d67-fa63-58d9-bfd7-601661734136','SEED-EMP-002','full_time','Senior English Teacher',CURRENT_DATE-INTERVAL '150 days',19500,'EGP','active'),
-('43fb08b6-df0c-54cc-8210-bc99d30afc20','cc7abac3-7af3-5fd3-8560-e2eaea1a057c','SEED-EMP-003','full_time','HR Officer',CURRENT_DATE-INTERVAL '200 days',22000,'EGP','active')
-ON CONFLICT DO NOTHING;
-
--- Extra teacher availability
-INSERT INTO teacher_availabilities(id,employee_id,day_of_week,start_time,end_time,is_available,note)
-VALUES
-('b6bdf665-a7d3-5915-82d7-639b8239e60b','36f5ca2e-4a22-521a-be89-c2df80e55605',3,'10:00','18:00',TRUE,'Seed teacher 2 availability'),
-('2c9d5c02-f0e8-5db9-bb68-049ffecdd36f','43fb08b6-df0c-54cc-8210-bc99d30afc20',5,'09:00','16:00',TRUE,'Seed HR availability')
-ON CONFLICT DO NOTHING;
-
--- Extra finance data
-INSERT INTO promo_codes(id,code,type,value,max_discount,expiry_date,usage_limit,used_count,applicable_courses,status,created_by)
-VALUES
-('c361a5bc-5733-5629-9f0c-7b8b01da2c3b','SEED20','percentage',20,800,CURRENT_DATE+INTERVAL '120 days',50,1,'["SEED-A2-2026","SEED-B1-2026"]'::jsonb,'active','78cfa859-27ec-5273-8937-3446b7575ce2')
-ON CONFLICT DO NOTHING;
-
-UPDATE invoices SET invoice_number='SEED-INV-001' WHERE id='72413858-0205-5187-904b-9c4c1feb949a';
-UPDATE payments SET receipt_number='SEED-RCP-001' WHERE id='eebb1de8-d361-535d-8b91-2f31f6eec30e';
-
--- Extra website/system records
-INSERT INTO settings(id,key,value,"group",is_encrypted,description)
-VALUES
-('728d4b01-a10d-5a46-8d49-008fd7bbc102','seed_currency','EGP','finance',FALSE,'Seed finance currency'),
-('0af9410f-4fba-5786-90c1-229a116c9b78','seed_branch_count','3','system',FALSE,'Number of seed branches'),
-('02c20ece-be1c-5ce4-8614-d6376e293efa','seed_lms_enabled','true','lms',FALSE,'Seed LMS flag'),
-('c6a4f9cd-3bfa-5265-9d04-17f2cc2e8193','seed_chat_enabled','true','chat',FALSE,'Seed chat flag')
-ON CONFLICT (key) DO NOTHING;
-
-
--- Additional rich test coverage
-
-UPDATE students SET placement_test_id='4528edc2-673c-51c2-8b4a-ec9405a70eea' WHERE id='b8430eec-4181-577f-a38b-933397704e7a';
-
--- More sessions + attendance
-INSERT INTO sessions(id,group_id,date,start_time,end_time,classroom_id,mode,topic,notes)
-VALUES
-('f3e8f066-4afa-5b4e-a0c6-12ef6bddd155','fe652f07-65d3-586c-a5c3-b3ecaeeda736',CURRENT_DATE-INTERVAL '7 days','09:00','11:00','20ce1287-84e6-57aa-9854-2d55a7398b69','in_person','Present Simple','Seed completed lesson'),
-('5991054a-bd46-59d7-bbe0-ff33f2e2a966','f92fa7a5-6c6a-596c-9af1-dc13dfa70976',CURRENT_DATE-INTERVAL '5 days','18:00','20:00','4e6e86d8-e553-5cac-9735-287a4ba476ac','hybrid','Opinion Speaking','Seed hybrid session')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO attendances(id,session_id,student_id,status,check_in_method,check_in_time,minutes_late,notes,created_by)
-VALUES
-('36f7ff7d-a39d-5faf-bf4e-4f3de8758b63','f3e8f066-4afa-5b4e-a0c6-12ef6bddd155','b8430eec-4181-577f-a38b-933397704e7a','late','qr_code',NOW()-INTERVAL '7 days',10,'Late QR check-in','d3995993-c92b-5696-b5eb-f7f09a1031e4'),
-('26db7da7-23dc-5f91-a643-9f571b0a765f','5991054a-bd46-59d7-bbe0-ff33f2e2a966','72233c04-278a-5fb3-bf78-af38772e9a13','absent','manual',NULL,0,'Seed absence','76405d67-fa63-58d9-bfd7-601661734136'),
-('8c571666-8d3c-5137-8023-bf14424cedb5','5991054a-bd46-59d7-bbe0-ff33f2e2a966','72233c04-278a-5fb3-bf78-af38772e9a13','excused','manual',NULL,0,'Seed excused absence','76405d67-fa63-58d9-bfd7-601661734136')
-ON CONFLICT DO NOTHING;
-
--- More assignments/submissions
-INSERT INTO assignments(id,group_id,title,description,type,due_at,max_grade,allow_late_submission,late_penalty_percent,is_published,created_by)
-VALUES
-('ea264072-7bc8-5393-b3cb-bf336c1b50c1','f92fa7a5-6c6a-596c-9af1-dc13dfa70976','B1 Opinion Paragraph','Write a structured opinion paragraph.','text',NOW()+INTERVAL '10 days',50,FALSE,0,TRUE,'76405d67-fa63-58d9-bfd7-601661734136')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO submissions(id,assignment_id,student_id,content,submitted_at,is_late,grade,feedback,graded_by,graded_at,status)
-VALUES
-('135e203c-4ec0-59a0-a90a-279c0886d36b','ea264072-7bc8-5393-b3cb-bf336c1b50c1','72233c04-278a-5fb3-bf78-af38772e9a13','I think learning languages improves communication.',NOW()-INTERVAL '2 days',FALSE,45,'Clear argument.','76405d67-fa63-58d9-bfd7-601661734136',NOW()-INTERVAL '1 day','graded')
-ON CONFLICT DO NOTHING;
-
--- Second quiz
-INSERT INTO quizzes(id,group_id,title,description,time_limit_minutes,max_attempts,shuffle_questions,shuffle_options,release_type,passing_score,is_published,created_by)
-VALUES
-('92eced3c-b9bb-59f6-aa85-d6df2564e50f','f92fa7a5-6c6a-596c-9af1-dc13dfa70976','B1 Grammar Quiz','Seed B1 quiz.',25,2,TRUE,TRUE,'instant',60,TRUE,'76405d67-fa63-58d9-bfd7-601661734136')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO quiz_questions(id,quiz_id,question_text,type,options,correct_answer,points,"order")
-VALUES
-('48fe4848-d921-5bc3-ba38-321f64d707b2','92eced3c-b9bb-59f6-aa85-d6df2564e50f','Choose the correct connector.','mcq','["although","because","so"]'::jsonb,'"although"'::jsonb,1,1)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO quiz_attempts(id,quiz_id,student_id,attempt_number,answers,score,percentage,is_passed,started_at,submitted_at,time_spent_seconds,status,graded_by,graded_at)
-VALUES
-('2ddcb0d7-0daa-5642-ba10-941a7afc2dc5','92eced3c-b9bb-59f6-aa85-d6df2564e50f','72233c04-278a-5fb3-bf78-af38772e9a13',1,'{"48fe4848-d921-5bc3-ba38-321f64d707b2":"although"}'::jsonb,1,100,TRUE,NOW()-INTERVAL '2 days',NOW()-INTERVAL '2 days'+INTERVAL '6 minutes',360,'graded','76405d67-fa63-58d9-bfd7-601661734136',NOW()-INTERVAL '2 days')
-ON CONFLICT DO NOTHING;
-
--- More gradebook data
-INSERT INTO gradebook_categories(id,group_id,name,weight,"order",created_by)
-VALUES
-('26225faa-c6eb-51a5-8fb0-676865798766','f92fa7a5-6c6a-596c-9af1-dc13dfa70976','Assignments',40,1,'76405d67-fa63-58d9-bfd7-601661734136')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO gradebook_entries(id,group_id,student_id,category_id,score,max_score,percentage,weighted_score,reference_type,notes,created_by)
-VALUES
-('916c523f-adfe-5f85-9c93-7a85371880c0','f92fa7a5-6c6a-596c-9af1-dc13dfa70976','72233c04-278a-5fb3-bf78-af38772e9a13','26225faa-c6eb-51a5-8fb0-676865798766',45,50,90,36,'assignment','Seed grade','76405d67-fa63-58d9-bfd7-601661734136')
-ON CONFLICT DO NOTHING;
-
--- More finance: second enrollment/invoice/payment/installment/transaction
-INSERT INTO enrollments(id,student_id,group_id,status,total_fee,discount_amount,final_amount,enrolled_at,enrolled_by)
-VALUES
-('6ca9061c-aac4-58af-b7a2-4099438439d3','72233c04-278a-5fb3-bf78-af38772e9a13','f92fa7a5-6c6a-596c-9af1-dc13dfa70976','active',3200,200,3000,NOW()-INTERVAL '12 days','78cfa859-27ec-5273-8937-3446b7575ce2')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO invoices(id,invoice_number,enrollment_id,student_id,branch_id,subtotal,discount_amount,tax_amount,total_amount,paid_amount,balance_due,status,due_date,notes,created_by)
-VALUES
-('aeeb8005-a818-5278-a3d6-d544fe9f2462','SEED-INV-002','6ca9061c-aac4-58af-b7a2-4099438439d3','72233c04-278a-5fb3-bf78-af38772e9a13','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a',3200,200,0,3000,3000,0,'paid',CURRENT_DATE+INTERVAL '5 days','Seed paid invoice','5ab51db0-5fba-52ca-b0a4-5528705e2e5f')
-ON CONFLICT DO NOTHING;
-
-UPDATE invoices SET invoice_number='SEED-INV-002' WHERE id='aeeb8005-a818-5278-a3d6-d544fe9f2462';
-
-INSERT INTO payments(id,invoice_id,amount,method,reference,paid_at,recorded_by,status,receipt_number)
-VALUES
-('6baefc71-43a3-5a40-8395-a8566b0f8a8c','aeeb8005-a818-5278-a3d6-d544fe9f2462',3000,'bank_transfer','SEED-BANK-002',NOW()-INTERVAL '5 days','5ab51db0-5fba-52ca-b0a4-5528705e2e5f','completed','SEED-RCP-002')
-ON CONFLICT DO NOTHING;
-
-UPDATE payments SET receipt_number='SEED-RCP-002' WHERE id='6baefc71-43a3-5a40-8395-a8566b0f8a8c';
-
-INSERT INTO installments(id,invoice_id,installment_number,amount,due_date,paid_amount,paid_at,status)
-VALUES
-('6f1439ec-712c-5bdc-bd75-307e462729e4','aeeb8005-a818-5278-a3d6-d544fe9f2462',1,3000,CURRENT_DATE-INTERVAL '5 days',3000,NOW()-INTERVAL '5 days','paid')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO financial_transactions(id,branch_id,invoice_id,payment_id,transaction_type,direction,amount,transaction_date,description,created_by)
-VALUES
-('297d474b-b433-5288-accd-379d8cd82908','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a','aeeb8005-a818-5278-a3d6-d544fe9f2462','6baefc71-43a3-5a40-8395-a8566b0f8a8c','payment','in',3000,NOW()-INTERVAL '5 days','Seed bank payment','5ab51db0-5fba-52ca-b0a4-5528705e2e5f')
-ON CONFLICT DO NOTHING;
-
--- More activities
-INSERT INTO activities(id,name,description,type,date,start_time,end_time,location,branch_id,capacity,fee,target_levels,target_groups,is_open_to_all,status,created_by)
-VALUES
-('352c4d22-8676-51c6-939c-d4f5a6a9f0de','Seed Movie Night','Test movie night activity','movie_night',CURRENT_DATE+INTERVAL '20 days','17:00','20:00','Seed Main Branch','66fc3021-8661-503f-b5c8-cea9e67629e6',40,50,'["A1","A2","B1","B2"]'::jsonb,'[]'::jsonb,TRUE,'upcoming','31d5ee25-71b5-5dbb-93cb-818ee85e084b')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO activity_registrations(id,activity_id,student_id,status,paid_amount)
-VALUES
-('93bef0c5-40f9-5911-85a1-7eb64c302b9c','352c4d22-8676-51c6-939c-d4f5a6a9f0de','72233c04-278a-5fb3-bf78-af38772e9a13','registered',50)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO activity_photos(id,activity_id,file_url,caption,uploaded_by)
-VALUES
-('5848217d-2110-5b88-a93e-f125c49b3c55','352c4d22-8676-51c6-939c-d4f5a6a9f0de','https://example.com/seed-movie.jpg','Seed movie night','31d5ee25-71b5-5dbb-93cb-818ee85e084b')
-ON CONFLICT DO NOTHING;
-
--- More inventory movements/issues
-INSERT INTO stock_moves(id,item_id,branch_id,type,quantity,unit_cost,reason,reference_type,created_by)
-VALUES
-('58c9e7c3-4aa4-576d-8148-334bfe74bbdc','46880901-cff0-5c43-a855-91d0d0b457d5','66fc3021-8661-503f-b5c8-cea9e67629e6','out',1,120,'Issued to student','manual','78cfa859-27ec-5273-8937-3446b7575ce2')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO stock_levels(id,item_id,branch_id,quantity,reserved_quantity,last_counted_at)
-VALUES
-('212330d9-4df3-5625-99ad-c4b847dcea44','46880901-cff0-5c43-a855-91d0d0b457d5','66fc3021-8661-503f-b5c8-cea9e67629e6',34,0,NOW())
-ON CONFLICT DO NOTHING;
-
-INSERT INTO student_item_issues(id,student_id,item_id,branch_id,quantity,cost,issued_at,created_by)
-VALUES
-('4604b4da-2e5a-57ec-9daf-cbeed059bfe5','72233c04-278a-5fb3-bf78-af38772e9a13','46880901-cff0-5c43-a855-91d0d0b457d5','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a',1,180,NOW()-INTERVAL '2 days','78cfa859-27ec-5273-8937-3446b7575ce2')
-ON CONFLICT DO NOTHING;
-
--- More KB data
-INSERT INTO kb_categories(id,name,slug,description,visibility,sort_order)
-VALUES
-('f4655370-48c5-5149-9537-c83af2e55b73','Seed Teacher Guides','seed-teacher-guides','Teacher-only seed articles','teacher',2)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO kb_articles(id,category_id,title,slug,body,excerpt,version,visibility,is_pinned,view_count,created_by,updated_by)
-VALUES
-('5d1b8d4b-4451-56b0-96ba-1b4c2134ef45','f4655370-48c5-5149-9537-c83af2e55b73','Seed Grading Guide','seed-grading-guide','How to grade seed assignments.','Seed grading article',1,'teacher',FALSE,4,'d3995993-c92b-5696-b5eb-f7f09a1031e4','d3995993-c92b-5696-b5eb-f7f09a1031e4')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO kb_article_versions(id,article_id,body,version_number,change_note,created_by)
-VALUES
-('333546e2-a2ea-5101-beaf-60a3ba39e5aa','5d1b8d4b-4451-56b0-96ba-1b4c2134ef45','How to grade seed assignments. v2',2,'Added seed rubric note','d3995993-c92b-5696-b5eb-f7f09a1031e4')
-ON CONFLICT DO NOTHING;
-
--- More chat rooms/members/messages
-INSERT INTO chat_rooms(id,type,group_id,name,topic,created_by)
-VALUES
-('e83d30b6-9d35-5d20-95b2-661500d1a153','one_on_one',NULL,'Seed Teacher/Student DM','Testing direct messaging','d3995993-c92b-5696-b5eb-f7f09a1031e4')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO chat_room_members(id,room_id,user_id,role)
-VALUES
-('429c79b2-d217-5192-9145-704b41539708','238d8c87-ad12-5b9f-a30d-94261a593f33','d3995993-c92b-5696-b5eb-f7f09a1031e4','teacher'),
-('e4f8c98a-cb79-5b27-ae40-9322e8870392','238d8c87-ad12-5b9f-a30d-94261a593f33','46020932-b634-5ac4-be12-2969f1f15c93','student'),
-('2a56c8de-053c-5959-8b45-7f39c216afa7','238d8c87-ad12-5b9f-a30d-94261a593f33','abe6a78b-d48f-534c-976b-5deb78a34c18','moderator'),
-('f7fe495d-eefa-5784-93e5-1b22c4ea7b72','e83d30b6-9d35-5d20-95b2-661500d1a153','d3995993-c92b-5696-b5eb-f7f09a1031e4','teacher'),
-('e85da89f-53ca-5e7c-80bc-35bcb5986788','e83d30b6-9d35-5d20-95b2-661500d1a153','46020932-b634-5ac4-be12-2969f1f15c93','student')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO chat_messages(id,room_id,sender_id,body,type)
-VALUES
-('6df7c842-1ec3-5085-acf0-ec07a615235e','238d8c87-ad12-5b9f-a30d-94261a593f33','46020932-b634-5ac4-be12-2969f1f15c93','Can I submit my assignment today?','text'),
-('c0a83ad7-1c93-564e-b634-6e35f9a19321','238d8c87-ad12-5b9f-a30d-94261a593f33','d3995993-c92b-5696-b5eb-f7f09a1031e4','Yes, before midnight.','text'),
-('c5d3f3f9-9acc-55b6-9ab6-1712b74d9afa','e83d30b6-9d35-5d20-95b2-661500d1a153','46020932-b634-5ac4-be12-2969f1f15c93','I need help with pronunciation.','text')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO chat_violations(id,message_id,room_id,sender_id,rule_matched,original_message,action_taken,moderator_id,moderator_note,detection_method)
-VALUES
-('13aa70cd-1efb-5332-b1ae-40b422460757','652b95ff-5d8e-5304-91ae-263b0ee9be47','238d8c87-ad12-5b9f-a30d-94261a593f33','46020932-b634-5ac4-be12-2969f1f15c93','test_rule','Seed flagged message','warned','abe6a78b-d48f-534c-976b-5deb78a34c18','Seed moderation record','text_regex'),
-('786821e5-7f43-5a8a-88e6-fd9e178515e3','6df7c842-1ec3-5085-acf0-ec07a615235e','238d8c87-ad12-5b9f-a30d-94261a593f33','46020932-b634-5ac4-be12-2969f1f15c93','tone_check','Can I submit my assignment today?','flagged_only','abe6a78b-d48f-534c-976b-5deb78a34c18','Seed review','text_regex')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO chat_strikes(id,user_id,violation_id,strike_number,action,expires_at,applied_by,is_active)
-VALUES
-('2ae02f64-9fd8-5811-9fe7-20ef8a7c52d0','46020932-b634-5ac4-be12-2969f1f15c93','13aa70cd-1efb-5332-b1ae-40b422460757',1,'warning',NOW()+INTERVAL '30 days','abe6a78b-d48f-534c-976b-5deb78a34c18',TRUE),
-('5ea30412-b011-5853-8fbf-17f035c87ffa','006db1c6-18d5-587c-8640-6996aa62605d','786821e5-7f43-5a8a-88e6-fd9e178515e3',1,'warning',NOW()+INTERVAL '30 days','abe6a78b-d48f-534c-976b-5deb78a34c18',TRUE)
-ON CONFLICT DO NOTHING;
-
--- More website / system
-INSERT INTO blog_posts(id,title,slug,content,excerpt,status,published_at,author_id,view_count)
-VALUES
-('2a007b0c-5c52-5f20-857e-61cb0f3ae854','Seed Branch News','seed-branch-news','Seed branch news article.','Seed branch news.','published',NOW()-INTERVAL '2 days','f54bc944-43f9-5b09-8a79-979d2186bc31',10)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO testimonials(id,student_id,name,content,rating,course_name,is_featured,status)
-VALUES
-('12424ef4-6aa9-5b5c-b2c9-61c1ac985a28','72233c04-278a-5fb3-bf78-af38772e9a13','Student Two','The seed dataset is useful for testing.','5','English B1 Intermediate',FALSE,'approved')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO page_views(id,page_path,referrer,user_agent,ip_address,session_id)
-VALUES
-('e79d7041-2e22-5b20-bfa0-c4c6629d4a35','/dashboard','/login','Seed Browser','127.0.0.1','seed-session-002'),
-('3a53913a-9e70-5825-a986-e31a0cef8635','/roles','/dashboard','Seed Browser','127.0.0.1','seed-session-003')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO notifications(id,user_id,type,title,body,data,action_url)
-VALUES
-('8fb1f53b-5581-5665-bb01-f04be08601f3','46020932-b634-5ac4-be12-2969f1f15c93','assignment','Seed Assignment','A new seed assignment is available.','{"assignmentId":"265f3866-5e82-5318-bfa1-202d366903de"}'::jsonb,'/assignments/265f3866-5e82-5318-bfa1-202d366903de'),
-('e6afa09b-3362-5f9f-a3f8-e96df172b2f6','d3995993-c92b-5696-b5eb-f7f09a1031e4','attendance','Seed Attendance','Attendance was saved for a seed session.','{"sessionId":"23b3756a-0eae-560e-baf6-b47d981b4ff1"}'::jsonb,'/attendance'),
-('27ff3d73-e238-5f0b-a340-c08174ed2135','31d5ee25-71b5-5dbb-93cb-818ee85e084b','lead','Seed Lead','A seed lead needs follow-up.','{"leadId":"a933cad8-3039-5942-abdd-0ecc8fa5a37b"}'::jsonb,'/leads')
-ON CONFLICT DO NOTHING;
-
-INSERT INTO notification_preferences(id,user_id,channel,module,event,is_enabled)
-VALUES
-('99b3d764-fe35-5663-a604-6b91534f434a','46020932-b634-5ac4-be12-2969f1f15c93','email','lms','assignment_due',TRUE),
-('e7c454f3-64ae-59b1-b3ca-67c802c0a704','d3995993-c92b-5696-b5eb-f7f09a1031e4','in_app','attendance','marked',TRUE),
-('0eb65061-a21e-54a1-ae71-8b9eefe28f91','31d5ee25-71b5-5dbb-93cb-818ee85e084b','email','crm','lead_assigned',TRUE)
-ON CONFLICT DO NOTHING;
-
-INSERT INTO audit_logs(id,actor_id,actor_type,action,module,target_type,target_id,before_state,after_state,description,ip_address,user_agent)
-VALUES
-('99067c0b-6451-53f0-a1da-2b96ee1114c6','f54bc944-43f9-5b09-8a79-979d2186bc31','user','seed_login_test','auth','user','f54bc944-43f9-5b09-8a79-979d2186bc31','{}'::jsonb,'{"role":"super_admin"}'::jsonb,'Seed admin test log','127.0.0.1','Seed Browser'),
-('51ec8b4f-822f-5b97-80c1-caaf65043ce9','31d5ee25-71b5-5dbb-93cb-818ee85e084b','user','seed_branch_test','branches','branch','41a77ad8-a44e-5f27-9b30-f1ad0e62e98a','{}'::jsonb,'{"test":"branch_manager"}'::jsonb,'Seed manager branch test','127.0.0.1','Seed Browser')
-ON CONFLICT DO NOTHING;
-
-
--- Commit only after every table has been populated.
 COMMIT;
-
--- Quick verification
-SELECT 'branches' AS table_name, COUNT(*) AS row_count FROM branches WHERE name LIKE 'Seed %'
-UNION ALL SELECT 'users', COUNT(*) FROM users WHERE email LIKE '%@speakup.test'
-UNION ALL SELECT 'roles', COUNT(*) FROM roles WHERE slug IN ('super_admin','branch_manager','sales','finance','academic','teacher','student','moderator','hr','auditor')
-UNION ALL SELECT 'permissions', COUNT(*) FROM permissions WHERE module IN ('users','crm','sales','placement','groups','attendance','lms','chat','finance','certificates','hr','activities','inventory','kb','reports','branches','system')
-UNION ALL SELECT 'students', COUNT(*) FROM students WHERE student_number LIKE 'SEED-STU-%'
-UNION ALL SELECT 'courses', COUNT(*) FROM courses WHERE code LIKE 'SEED-%'
-UNION ALL SELECT 'groups', COUNT(*) FROM groups WHERE name LIKE 'Seed %'
-UNION ALL SELECT 'sessions', COUNT(*) FROM sessions WHERE id IN ('23b3756a-0eae-560e-baf6-b47d981b4ff1','f3e8f066-4afa-5b4e-a0c6-12ef6bddd155','5991054a-bd46-59d7-bbe0-ff33f2e2a966')
-UNION ALL SELECT 'invoices', COUNT(*) FROM invoices WHERE invoice_number LIKE 'SEED-INV-%'
-UNION ALL SELECT 'payments', COUNT(*) FROM payments WHERE receipt_number LIKE 'SEED-RCP-%'
-UNION ALL SELECT 'employees', COUNT(*) FROM employees WHERE employee_number LIKE 'SEED-EMP-%'
-UNION ALL SELECT 'inventory_items', COUNT(*) FROM inventory_items WHERE sku LIKE 'SEED-%'
-UNION ALL SELECT 'kb_articles', COUNT(*) FROM kb_articles WHERE slug LIKE 'seed-%'
-UNION ALL SELECT 'chat_messages', COUNT(*) FROM chat_messages WHERE id IN ('652b95ff-5d8e-5304-91ae-263b0ee9be47','6df7c842-1ec3-5085-acf0-ec07a615235e','c0a83ad7-1c93-564e-b634-6e35f9a19321','c5d3f3f9-9acc-55b6-9ab6-1712b74d9afa')
-ORDER BY table_name;
